@@ -27,8 +27,8 @@ jobs:
 
       - name: Install Fastlane
         run: |
-          gem install fastlane -N
-          fastlane --version
+          bundle install
+          bundle exec fastlane --version
 
       - name: Import signing certificate
         uses: apple-actions/import-codesign-certs@v3
@@ -37,10 +37,22 @@ jobs:
           p12-password: ${{ secrets.P12_PASSWORD }}
           keychain-password: ${{ secrets.KEYCHAIN_PASSWORD }}
 
+      - name: Verify Apple Distribution identity
+        run: |
+          set -euo pipefail
+          echo "== keychains =="
+          security list-keychains -d user
+          echo "== codesigning identities =="
+          security find-identity -v -p codesigning
+          if ! security find-identity -v -p codesigning | grep -Eq 'Apple Distribution|iPhone Distribution'; then
+            echo "::error::BUILD_CERTIFICATE_BASE64 必須是 Apple Distribution（不是 Apple Development）。請從鑰匙圈重新匯出 Distribution 的 .p12 並更新 Secret。"
+            exit 1
+          fi
+
       - name: Build & upload to App Store Connect
         env:
           APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
           APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
           APP_STORE_CONNECT_KEY: ${{ secrets.APP_STORE_CONNECT_KEY }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-        run: fastlane upload_asc
+        run: bundle exec fastlane upload_asc
