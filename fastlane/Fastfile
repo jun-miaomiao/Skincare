@@ -62,6 +62,7 @@ platform :ios do
       scheme: "Skincare",
       configuration: "Release",
       clean: true,
+      destination: "generic/platform=iOS",
       export_method: "app-store",
       output_directory: "build",
       output_name: "Skincare.ipa",
