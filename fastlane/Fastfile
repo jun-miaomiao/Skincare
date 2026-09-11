@@ -6,6 +6,7 @@ platform :ios do
   desc "Archive and upload to App Store Connect (does not submit for review)"
   lane :upload_asc do
     require "base64"
+    require "open3"
 
     raw_key = ENV.fetch("APP_STORE_CONNECT_KEY").to_s.strip
     raw_key = raw_key.gsub("\r\n", "\n").gsub("\\n", "\n")
@@ -15,11 +16,22 @@ platform :ios do
     end
     UI.user_error!("APP_STORE_CONNECT_KEY is not a valid .p8 PEM") unless raw_key.include?("BEGIN PRIVATE KEY")
 
+    # GitHub Secrets sometimes strip PEM newlines; rebuild a valid PKCS8 PEM.
+    if (m = raw_key.match(/-----BEGIN PRIVATE KEY-----\s*([A-Za-z0-9+\/=]+)\s*-----END PRIVATE KEY-----/m))
+      body = m[1].gsub(/\s+/, "")
+      wrapped = body.scan(/.{1,64}/).join("\n")
+      raw_key = "-----BEGIN PRIVATE KEY-----\n#{wrapped}\n-----END PRIVATE KEY-----\n"
+    end
+
+    key_path = File.join(Dir.tmpdir, "AuthKey_#{ENV.fetch("APP_STORE_CONNECT_KEY_ID").strip}.p8")
+    File.write(key_path, raw_key)
+    _out, err, status = Open3.capture3("openssl", "pkey", "-in", key_path, "-noout")
+    UI.user_error!("APP_STORE_CONNECT_KEY failed OpenSSL parse: #{err}") unless status.success?
+
     api_key = app_store_connect_api_key(
       key_id: ENV.fetch("APP_STORE_CONNECT_KEY_ID").strip,
       issuer_id: ENV.fetch("APP_STORE_CONNECT_ISSUER_ID").strip,
-      key_content: raw_key,
-      is_key_content_base64: false,
+      key_filepath: key_path,
       duration: 1200,
       in_house: false
     )
@@ -29,7 +41,6 @@ platform :ios do
     sigh(
       api_key: api_key,
       app_identifier: "com.jun.Skincare",
-      username: nil,
       readonly: false,
       force: true
     )
