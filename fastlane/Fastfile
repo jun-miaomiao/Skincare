@@ -75,15 +75,11 @@ platform :ios do
       }
     )
 
-    upload_to_app_store(
+    upload_to_testflight(
       api_key: api_key,
       ipa: "build/Skincare.ipa",
-      skip_metadata: true,
-      skip_screenshots: true,
-      precheck_include_in_app_purchases: false,
-      submit_for_review: false,
-      force: true,
-      run_precheck_before_submit: false
+      skip_waiting_for_build_processing: true,
+      distribute_external: false
     )
   end
 end
