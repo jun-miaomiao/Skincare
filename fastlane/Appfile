@@ -1,0 +1,4 @@
+# Appfile
+app_identifier("com.jun.Skincare")
+apple_id(ENV["APPLE_ID"]) # optional; API key is preferred
+team_id(ENV["APPLE_TEAM_ID"] || "ALW3W7UU8D")

@@ -1,0 +1,33 @@
+# Xcode / macOS
+.DS_Store
+**/xcuserdata/
+**/*.xcuserstate
+DerivedData/
+build/
+*.ipa
+*.dSYM.zip
+*.dSYM
+*.moved-aside
+*.hmap
+*.ipa
+timeline.xctimeline
+playground.xcworkspace
+
+# Secrets / signing (never commit)
+**/AuthKey_*.p8
+*.p12
+*.mobileprovision
+*.cer
+*.certSigningRequest
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots/**/*.png
+fastlane/test_output
+vendor/bundle
+
+# Env
+.env
+.env.*
+
+# Node / misc
+node_modules/

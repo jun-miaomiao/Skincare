@@ -1,0 +1,19 @@
+[
+  ["Diisopropyl Sebacate", "二異丙基癸二酸酯", "潤膚、溶劑", 1, ["DIISOPROPYL SEBACATE"]],
+  ["Diphenylsiloxy Phenyl Trimethicone", "二苯基矽氧基苯基三甲基矽氧烷", "柔順、光澤", 1, ["DIPHENYLSILOXY PHENYL TRIMETHICONE"]],
+  ["Ethylhexyl Methoxycinnamate", "甲氧基肉桂酸乙基己酯", "化學防曬", 3, ["OCTINOXATE", "METHOXYCINNAMATE"]],
+  ["Homosalate", "水楊酸三甲環己酯", "化學防曬", 3, []],
+  ["Octocrylene", "奥克立林", "化學防曬", 3, []],
+  ["Butyl Methoxydibenzoylmethane", "丁基甲氧基二苯醯基甲烷", "化學防曬", 3, ["AVOBENZONE"]],
+  ["Polysilicone-15", "聚矽氧烷-15", "化學防曬", 2, []],
+  ["Diethylamino Hydroxybenzoyl Hexyl Benzoate", "二乙胺基羥苯甲醯基苯甲酸己酯", "化學防曬", 2, ["UVINUL A PLUS"]],
+  ["Bis-Ethylhexyloxyphenol Methoxyphenyl Triazine", "雙-乙基己氧苯酚甲氧苯基三嗪", "化學防曬", 2, ["TINOSORB S"]],
+  ["Methylene Bis-Benzotriazolyl Tetramethylbutylphenol", "亞甲基雙-苯并三唑基四甲基丁基酚", "化學防曬", 2, ["TINOSORB M"]],
+  ["Ethylhexyl Triazone", "乙基己基三嗪酮", "化學防曬", 2, ["UVINUL T 150"]],
+  ["Phenethyl Benzoate", "苯乙基苯甲酸酯", "潤膚、溶劑", 1, []],
+  ["Dibutyl Adipate", "己二酸二丁酯", "潤膚、溶劑", 1, []],
+  ["Diisopropyl Adipate", "己二酸二異丙酯", "潤膚、溶劑", 1, []],
+  ["VP/Eicosene Copolymer", "VP／二十碳烯共聚物", "成膜", 1, []],
+  ["Acrylates/Dimethicone Copolymer", "丙烯酸酯／聚二甲基矽氧烷共聚物", "成膜", 1, []],
+  ["Dimethicone/Vinyl Dimethicone Crosspolymer", "聚二甲基矽氧烷／乙烯基聚二甲基矽氧烷交聯聚合物", "質地、柔焦", 1, []]
+]

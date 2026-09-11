@@ -1,0 +1,124 @@
+{
+  "identifier" : "SkincareProducts",
+  "nonRenewingSubscriptions" : [
+
+  ],
+  "products" : [
+    {
+      "displayPrice" : "1490",
+      "familyShareable" : false,
+      "internalID" : "AAAAAAAA-BBBB-CCCC-DDDD-EEEEEEEE0003",
+      "localizations" : [
+        {
+          "description" : "限量 200 名早鳥終身解鎖",
+          "displayName" : "終身早鳥",
+          "locale" : "zh_TW"
+        },
+        {
+          "description" : "Lifetime early-bird unlock",
+          "displayName" : "Lifetime Early Bird",
+          "locale" : "en_US"
+        }
+      ],
+      "productID" : "com.skincare.premium.lifetime",
+      "referenceName" : "Lifetime Early Bird",
+      "type" : "NonConsumable"
+    }
+  ],
+  "settings" : {
+    "_applicationInternalID" : "0",
+    "_developerTeamID" : "",
+    "_failTransactionsEnabled" : false,
+    "_lastSynchronizedDate" : 0,
+    "_locale" : "zh_TW",
+    "_storefront" : "TWN",
+    "_storeKitErrors" : [
+
+    ]
+  },
+  "subscriptionGroups" : [
+    {
+      "id" : "21480000",
+      "localizations" : [
+        {
+          "description" : "解鎖無限掃描與最愛",
+          "displayName" : "Skincare Premium",
+          "locale" : "zh_TW"
+        }
+      ],
+      "name" : "Premium",
+      "subscriptions" : [
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "99",
+          "familyShareable" : false,
+          "groupNumber" : 1,
+          "internalID" : "AAAAAAAA-BBBB-CCCC-DDDD-EEEEEEEE0001",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "先試一個月",
+              "displayName" : "月費",
+              "locale" : "zh_TW"
+            },
+            {
+              "description" : "Monthly access",
+              "displayName" : "Monthly",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "com.skincare.premium.monthly",
+          "recurringSubscriptionPeriod" : "P1M",
+          "referenceName" : "Monthly",
+          "subscriptionGroupID" : "21480000",
+          "type" : "RecurringSubscription",
+          "winbackOffers" : [
+
+          ]
+        },
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "590",
+          "familyShareable" : false,
+          "groupNumber" : 1,
+          "internalID" : "AAAAAAAA-BBBB-CCCC-DDDD-EEEEEEEE0002",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "最推薦，約半價",
+              "displayName" : "年費",
+              "locale" : "zh_TW"
+            },
+            {
+              "description" : "Best value yearly",
+              "displayName" : "Yearly",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "com.skincare.premium.yearly",
+          "recurringSubscriptionPeriod" : "P1Y",
+          "referenceName" : "Yearly",
+          "subscriptionGroupID" : "21480000",
+          "type" : "RecurringSubscription",
+          "winbackOffers" : [
+
+          ]
+        }
+      ]
+    }
+  ],
+  "version" : {
+    "major" : 3,
+    "minor" : 0
+  }
+}

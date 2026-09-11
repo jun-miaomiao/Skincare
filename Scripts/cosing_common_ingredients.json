@@ -1,0 +1,2418 @@
+[
+  [
+    "Helianthus Annuus Seed Oil",
+    "葵花籽油",
+    "植物油、柔潤",
+    1,
+    [
+      "SUNFLOWER OIL",
+      "해바라기씨오일"
+    ]
+  ],
+  [
+    "Olea Europaea Fruit Oil",
+    "橄欖果油",
+    "植物油、柔潤",
+    1,
+    [
+      "OLIVE OIL",
+      "올리브오일"
+    ]
+  ],
+  [
+    "Persea Gratissima Oil",
+    "酪梨油",
+    "植物油、柔潤",
+    1,
+    [
+      "AVOCADO OIL",
+      "아보카도오일"
+    ]
+  ],
+  [
+    "Prunus Amygdalus Dulcis Oil",
+    "甜杏仁油",
+    "植物油、柔潤",
+    1,
+    [
+      "SWEET ALMOND OIL",
+      "스위트아몬드오일"
+    ]
+  ],
+  [
+    "Simmondsia Chinensis Seed Oil",
+    "荷荷巴籽油",
+    "植物油、柔潤",
+    1,
+    [
+      "JOJOBA OIL",
+      "호호바오일"
+    ]
+  ],
+  [
+    "Argania Spinosa Kernel Oil",
+    "阿甘果仁油",
+    "植物油、抗氧化",
+    1,
+    [
+      "ARGAN OIL",
+      "아르간오일"
+    ]
+  ],
+  [
+    "Cocos Nucifera Oil",
+    "椰子油",
+    "植物油、柔潤",
+    2,
+    [
+      "COCONUT OIL",
+      "코코넛오일"
+    ]
+  ],
+  [
+    "Vitis Vinifera Seed Oil",
+    "葡萄籽油",
+    "植物油、抗氧化",
+    1,
+    [
+      "GRAPE SEED OIL",
+      "포도씨오일"
+    ]
+  ],
+  [
+    "Macadamia Ternifolia Seed Oil",
+    "夏威夷果油",
+    "植物油、柔潤",
+    1,
+    [
+      "MACADAMIA OIL"
+    ]
+  ],
+  [
+    "Ricinus Communis Seed Oil",
+    "蓖麻籽油",
+    "植物油、柔潤",
+    1,
+    [
+      "CASTOR OIL"
+    ]
+  ],
+  [
+    "Sesamum Indicum Seed Oil",
+    "芝麻籽油",
+    "植物油、柔潤",
+    1,
+    [
+      "SESAME OIL"
+    ]
+  ],
+  [
+    "Camellia Japonica Seed Oil",
+    "山茶花籽油",
+    "植物油、柔潤",
+    1,
+    [
+      "CAMELLIA OIL"
+    ]
+  ],
+  [
+    "Limnanthes Alba Seed Oil",
+    "白芒花籽油",
+    "植物油、柔潤",
+    1,
+    [
+      "MEADOWFOAM SEED OIL"
+    ]
+  ],
+  [
+    "Hippophae Rhamnoides Oil",
+    "沙棘果油",
+    "植物油、抗氧化",
+    1,
+    [
+      "SEA BUCKTHORN OIL"
+    ]
+  ],
+  [
+    "Rosa Canina Fruit Oil",
+    "玫瑰果油",
+    "植物油、修護",
+    1,
+    [
+      "ROSEHIP OIL"
+    ]
+  ],
+  [
+    "Butyrospermum Parkii Butter",
+    "乳木果脂",
+    "潤膚、屏障",
+    1,
+    [
+      "SHEA BUTTER",
+      "시어버터"
+    ]
+  ],
+  [
+    "Theobroma Cacao Seed Butter",
+    "可可脂",
+    "潤膚、屏障",
+    1,
+    [
+      "COCOA BUTTER"
+    ]
+  ],
+  [
+    "Mangifera Indica Seed Butter",
+    "芒果籽脂",
+    "潤膚、屏障",
+    1,
+    [
+      "MANGO BUTTER"
+    ]
+  ],
+  [
+    "Cocos Nucifera Butter",
+    "椰子脂",
+    "潤膚",
+    2,
+    [
+
+    ]
+  ],
+  [
+    "Sorbitol",
+    "山梨醇",
+    "保濕、多元醇",
+    1,
+    [
+      "솔비톨"
+    ]
+  ],
+  [
+    "Mannitol",
+    "甘露醇",
+    "保濕、多元醇",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Erythritol",
+    "赤藻糖醇",
+    "保濕、多元醇",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Xylitol",
+    "木糖醇",
+    "保濕、多元醇",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Glucose",
+    "葡萄糖",
+    "保濕、溶劑",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Fructose",
+    "果糖",
+    "保濕",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Sucrose",
+    "蔗糖",
+    "保濕、質地",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Honey",
+    "蜂蜜",
+    "保濕、舒緩",
+    1,
+    [
+      "MEL",
+      "꿀"
+    ]
+  ],
+  [
+    "Methylpropanediol",
+    "甲基丙二醇",
+    "保濕、溶劑",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Hexylene Glycol",
+    "己二醇",
+    "溶劑、保濕",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Dipropylene Glycol",
+    "二丙二醇",
+    "溶劑、保濕",
+    1,
+    [
+      "DPG"
+    ]
+  ],
+  [
+    "1,2-Hexanediol",
+    "1,2-己二醇",
+    "保濕、防腐輔助",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Caprylyl Glycol",
+    "辛甘醇",
+    "保濕、防腐輔助",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Pentylene Glycol",
+    "戊二醇",
+    "保濕、溶劑",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Polyglycerin-3",
+    "聚甘油-3",
+    "保濕",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Polyglycerin-6",
+    "聚甘油-6",
+    "保濕",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Polyglycerin-10",
+    "聚甘油-10",
+    "保濕",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Betaine",
+    "甜菜鹼",
+    "保濕、舒緩",
+    1,
+    [
+      "베타인"
+    ]
+  ],
+  [
+    "Sodium PCA",
+    "吡咯烷酮羧酸鈉",
+    "保濕",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "PCA",
+    "吡咯烷酮羧酸",
+    "保濕",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Urea",
+    "尿素",
+    "保濕、軟化角質",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Trehalose",
+    "海藻糖",
+    "保濕、保護",
+    1,
+    [
+      "트레할로스"
+    ]
+  ],
+  [
+    "Saccharide Isomerate",
+    "糖異構體",
+    "保濕",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Inositol",
+    "肌醇",
+    "保濕",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Serine",
+    "絲胺酸",
+    "胺基酸、保濕",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Glycine",
+    "甘胺酸",
+    "胺基酸、保濕",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Alanine",
+    "丙胺酸",
+    "胺基酸、保濕",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Arginine",
+    "精胺酸",
+    "胺基酸、保濕",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Histidine",
+    "組胺酸",
+    "胺基酸",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Proline",
+    "脯胺酸",
+    "胺基酸、保濕",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Lysine",
+    "離胺酸",
+    "胺基酸",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Leucine",
+    "白胺酸",
+    "胺基酸",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Isoleucine",
+    "異白胺酸",
+    "胺基酸",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Valine",
+    "纈胺酸",
+    "胺基酸",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Threonine",
+    "蘇胺酸",
+    "胺基酸",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Glutamic Acid",
+    "麩胺酸",
+    "胺基酸",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Aspartic Acid",
+    "天門冬胺酸",
+    "胺基酸",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Tyrosine",
+    "酪胺酸",
+    "胺基酸",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Phenylalanine",
+    "苯丙胺酸",
+    "胺基酸",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Cysteine",
+    "半胱胺酸",
+    "胺基酸",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Methionine",
+    "甲硫胺酸",
+    "胺基酸",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Tryptophan",
+    "色胺酸",
+    "胺基酸",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Palmitoyl Pentapeptide-4",
+    "棕櫚醯五胜肽-4",
+    "胜肽、抗老",
+    1,
+    [
+      "MATRIXYL"
+    ]
+  ],
+  [
+    "Palmitoyl Tripeptide-1",
+    "棕櫚醯三胜肽-1",
+    "胜肽、抗老",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Palmitoyl Tetrapeptide-7",
+    "棕櫚醯四胜肽-7",
+    "胜肽、舒緩",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Acetyl Hexapeptide-8",
+    "乙醯六胜肽-8",
+    "胜肽、抗老",
+    1,
+    [
+      "ARGIRELINE"
+    ]
+  ],
+  [
+    "Copper Tripeptide-1",
+    "銅三胜肽-1",
+    "胜肽、修護",
+    1,
+    [
+      "GHK-CU"
+    ]
+  ],
+  [
+    "Tripeptide-1",
+    "三胜肽-1",
+    "胜肽、修護",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Oligopeptide-1",
+    "寡胜肽-1",
+    "胜肽",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Collagen",
+    "膠原蛋白",
+    "成膜、保濕",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Hydrolyzed Collagen",
+    "水解膠原蛋白",
+    "保濕、成膜",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Soluble Collagen",
+    "可溶性膠原蛋白",
+    "保濕",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Elastin",
+    "彈性蛋白",
+    "成膜",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Hydrolyzed Elastin",
+    "水解彈性蛋白",
+    "保濕",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Ceramide NP",
+    "神經醯胺 NP",
+    "屏障修護",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Ceramide AP",
+    "神經醯胺 AP",
+    "屏障修護",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Ceramide EOP",
+    "神經醯胺 EOP",
+    "屏障修護",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Ceramide NS",
+    "神經醯胺 NS",
+    "屏障修護",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Phytosphingosine",
+    "植物鞘氨醇",
+    "屏障、舒緩",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Sphingolipids",
+    "鞘脂類",
+    "屏障",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Cholesterol",
+    "膽固醇",
+    "屏障、潤膚",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Lecithin",
+    "卵磷脂",
+    "乳化、潤膚",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Hydrogenated Lecithin",
+    "氫化卵磷脂",
+    "乳化",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Cetearyl Alcohol",
+    "鯨蠟硬脂醇",
+    "乳化、潤膚",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Cetyl Alcohol",
+    "鯨蠟醇",
+    "乳化、潤膚",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Stearyl Alcohol",
+    "硬脂醇",
+    "乳化、潤膚",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Behenyl Alcohol",
+    "山嵛醇",
+    "乳化、潤膚",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Stearic Acid",
+    "硬脂酸",
+    "乳化、潤膚",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Palmitic Acid",
+    "棕櫚酸",
+    "乳化、潤膚",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Myristic Acid",
+    "肉荳蔻酸",
+    "乳化、潔膚",
+    2,
+    [
+
+    ]
+  ],
+  [
+    "Lauric Acid",
+    "月桂酸",
+    "潔膚",
+    2,
+    [
+
+    ]
+  ],
+  [
+    "Oleic Acid",
+    "油酸",
+    "潤膚",
+    2,
+    [
+
+    ]
+  ],
+  [
+    "Linoleic Acid",
+    "亞麻油酸",
+    "潤膚、屏障",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Linolenic Acid",
+    "次亞麻油酸",
+    "潤膚",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Glyceryl Stearate",
+    "硬脂酸甘油酯",
+    "乳化劑",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Glyceryl Stearate SE",
+    "自乳化硬脂酸甘油酯",
+    "乳化劑",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "PEG-100 Stearate",
+    "PEG-100 硬脂酸酯",
+    "乳化劑",
+    2,
+    [
+
+    ]
+  ],
+  [
+    "Polysorbate 20",
+    "聚山梨醇酯 20",
+    "乳化、助溶",
+    2,
+    [
+
+    ]
+  ],
+  [
+    "Polysorbate 60",
+    "聚山梨醇酯 60",
+    "乳化劑",
+    2,
+    [
+
+    ]
+  ],
+  [
+    "Polysorbate 80",
+    "聚山梨醇酯 80",
+    "乳化劑",
+    2,
+    [
+
+    ]
+  ],
+  [
+    "Sorbitan Olivate",
+    "橄欖油酸山梨醇酯",
+    "乳化劑",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Cetearyl Olivate",
+    "橄欖油酸鯨蠟硬脂酯",
+    "乳化劑",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Sorbitan Stearate",
+    "硬脂酸山梨醇酯",
+    "乳化劑",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Sucrose Stearate",
+    "蔗糖硬脂酸酯",
+    "乳化劑",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Cetearyl Glucoside",
+    "鯨蠟硬脂葡糖苷",
+    "乳化劑",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Steareth-2",
+    "硬脂醇聚醚-2",
+    "乳化劑",
+    2,
+    [
+
+    ]
+  ],
+  [
+    "Steareth-21",
+    "硬脂醇聚醚-21",
+    "乳化劑",
+    2,
+    [
+
+    ]
+  ],
+  [
+    "Ceteareth-20",
+    "鯨蠟硬脂醇聚醚-20",
+    "乳化劑",
+    2,
+    [
+
+    ]
+  ],
+  [
+    "Olivoyl Hydrolyzed Wheat Protein",
+    "橄欖醯基水解小麥蛋白",
+    "乳化、潤膚",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Acrylates/C10-30 Alkyl Acrylate Crosspolymer",
+    "丙烯酸酯／C10-30 烷醇丙烯酸酯交聯聚合物",
+    "增稠、乳化",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Ammonium Acryloyldimethyltaurate/VP Copolymer",
+    "丙烯醯二甲基牛磺酸銨／VP 共聚物",
+    "增稠",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Hydroxyethyl Acrylate/Sodium Acryloyldimethyl Taurate Copolymer",
+    "丙烯酸羥乙酯／丙烯醯二甲基牛磺酸鈉共聚物",
+    "增稠、乳化",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Sodium Polyacrylate",
+    "聚丙烯酸鈉",
+    "增稠、吸水",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Hydroxyethylcellulose",
+    "羥乙基纖維素",
+    "增稠劑",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Hydroxypropyl Methylcellulose",
+    "羥丙基甲基纖維素",
+    "增稠劑",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Cellulose Gum",
+    "纖維素膠",
+    "增稠劑",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Sclerotium Gum",
+    "小核菌膠",
+    "增稠劑",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Pullulan",
+    "普魯蘭多糖",
+    "成膜",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Acacia Senegal Gum",
+    "阿拉伯膠",
+    "增稠、成膜",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Disodium EDTA",
+    "乙二胺四乙酸二鈉",
+    "螯合劑",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Trisodium EDTA",
+    "乙二胺四乙酸三鈉",
+    "螯合劑",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Tetrasodium EDTA",
+    "乙二胺四乙酸四鈉",
+    "螯合劑",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Sodium Phytate",
+    "植酸鈉",
+    "螯合劑",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Phytic Acid",
+    "植酸",
+    "螯合劑",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Citric Acid",
+    "檸檬酸",
+    "pH 調節",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Sodium Citrate",
+    "檸檬酸鈉",
+    "pH 調節",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Sodium Hydroxide",
+    "氫氧化鈉",
+    "pH 調節",
+    3,
+    [
+
+    ]
+  ],
+  [
+    "Potassium Hydroxide",
+    "氫氧化鉀",
+    "pH 調節",
+    3,
+    [
+
+    ]
+  ],
+  [
+    "Lactic Acid",
+    "乳酸",
+    "去角質、保濕",
+    3,
+    [
+
+    ]
+  ],
+  [
+    "Glycolic Acid",
+    "甘醇酸",
+    "去角質、提亮",
+    4,
+    [
+
+    ]
+  ],
+  [
+    "Mandelic Acid",
+    "杏仁酸",
+    "去角質",
+    3,
+    [
+
+    ]
+  ],
+  [
+    "Azelaic Acid",
+    "杜鵑花酸",
+    "抗炎、美白",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Tranexamic Acid",
+    "傳明酸",
+    "美白、淡斑",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Alpha-Arbutin",
+    "α-熊果素",
+    "美白",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Arbutin",
+    "熊果素",
+    "美白",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Ascorbyl Glucoside",
+    "抗壞血酸葡糖苷",
+    "美白、抗氧化",
+    1,
+    [
+      "AA2G"
+    ]
+  ],
+  [
+    "3-O-Ethyl Ascorbic Acid",
+    "3-O-乙基抗壞血酸",
+    "美白、抗氧化",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Magnesium Ascorbyl Phosphate",
+    "抗壞血酸磷酸鎂",
+    "美白、抗氧化",
+    1,
+    [
+      "MAP"
+    ]
+  ],
+  [
+    "Sodium Ascorbyl Phosphate",
+    "抗壞血酸磷酸鈉",
+    "美白、抗氧化",
+    1,
+    [
+      "SAP"
+    ]
+  ],
+  [
+    "Ascorbyl Tetraisopalmitate",
+    "抗壞血酸四異棕櫚酸酯",
+    "美白、抗氧化",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Ferulic Acid",
+    "阿魏酸",
+    "抗氧化",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Resveratrol",
+    "白藜蘆醇",
+    "抗氧化",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Green Tea Extract",
+    "綠茶萃取",
+    "抗氧化、舒緩",
+    1,
+    [
+      "CAMELLIA SINENSIS LEAF EXTRACT"
+    ]
+  ],
+  [
+    "Camellia Sinensis Leaf Extract",
+    "茶葉萃取",
+    "抗氧化、舒緩",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Aloe Barbadensis Leaf Juice",
+    "蘆薈葉汁",
+    "保濕、舒緩",
+    1,
+    [
+      "ALOE VERA"
+    ]
+  ],
+  [
+    "Chamomilla Recutita Flower Extract",
+    "洋甘菊萃取",
+    "舒緩",
+    1,
+    [
+      "CHAMOMILE EXTRACT"
+    ]
+  ],
+  [
+    "Calendula Officinalis Flower Extract",
+    "金盞花萃取",
+    "舒緩",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Madecassoside",
+    "積雪草苷",
+    "舒緩、修護",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Asiaticoside",
+    "亞洲積雪草苷",
+    "舒緩、修護",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Portulaca Oleracea Extract",
+    "馬齒莧萃取",
+    "舒緩",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Houttuynia Cordata Extract",
+    "魚腥草萃取",
+    "舒緩",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Scutellaria Baicalensis Root Extract",
+    "黃芩根萃取",
+    "舒緩、抗氧化",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Glycyrrhiza Glabra Root Extract",
+    "甘草根萃取",
+    "舒緩、美白",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Dipotassium Glycyrrhizate",
+    "甘草酸二鉀",
+    "舒緩、抗炎",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Bisabolol",
+    "紅沒藥醇",
+    "舒緩",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Adenosine",
+    "腺苷",
+    "抗老、舒緩",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Caffeine",
+    "咖啡因",
+    "消腫、抗氧化",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Ceramides",
+    "神經醯胺複合物",
+    "屏障修護",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Isododecane",
+    "異十二烷",
+    "揮發溶劑、延展",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Isohexadecane",
+    "異十六烷",
+    "潤膚、延展",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Isopropyl Myristate",
+    "肉荳蔻酸異丙酯",
+    "潤膚、助滲",
+    2,
+    [
+
+    ]
+  ],
+  [
+    "Isopropyl Palmitate",
+    "棕櫚酸異丙酯",
+    "潤膚",
+    2,
+    [
+
+    ]
+  ],
+  [
+    "Ethylhexyl Palmitate",
+    "棕櫚酸乙基己酯",
+    "潤膚",
+    2,
+    [
+
+    ]
+  ],
+  [
+    "Octyldodecanol",
+    "辛基十二醇",
+    "潤膚、溶劑",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Coco-Caprylate/Caprate",
+    "椰油醇-辛酸酯／癸酸酯",
+    "輕盈潤膚",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Dicaprylyl Carbonate",
+    "碳酸二辛酯",
+    "潤膚",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Dicaprylyl Ether",
+    "二辛醚",
+    "潤膚",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Triethylhexanoin",
+    "三乙基己酸甘油酯",
+    "潤膚",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Pentaerythrityl Tetraethylhexanoate",
+    "季戊四醇四乙基己酸酯",
+    "潤膚",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Silica",
+    "二氧化矽",
+    "吸油、質地",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Mica",
+    "雲母",
+    "珠光、色料",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Synthetic Fluorphlogopite",
+    "合成氟金雲母",
+    "珠光",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Tin Oxide",
+    "氧化錫",
+    "珠光輔助",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Iron Oxides",
+    "氧化鐵",
+    "色料",
+    1,
+    [
+      "CI 77491",
+      "CI 77492",
+      "CI 77499"
+    ]
+  ],
+  [
+    "CI 77891",
+    "二氧化鈦（色料）",
+    "色料、遮光",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "CI 77491",
+    "氧化鐵紅",
+    "色料",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "CI 77492",
+    "氧化鐵黃",
+    "色料",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "CI 77499",
+    "氧化鐵黑",
+    "色料",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Sodium Benzoate",
+    "苯甲酸鈉",
+    "防腐劑",
+    2,
+    [
+
+    ]
+  ],
+  [
+    "Potassium Sorbate",
+    "山梨酸鉀",
+    "防腐劑",
+    2,
+    [
+
+    ]
+  ],
+  [
+    "Benzyl Alcohol",
+    "苯甲醇",
+    "防腐、溶劑",
+    3,
+    [
+
+    ]
+  ],
+  [
+    "Chlorphenesin",
+    "氯苯甘醚",
+    "防腐劑",
+    2,
+    [
+
+    ]
+  ],
+  [
+    "Sodium Dehydroacetate",
+    "脫氫醋酸鈉",
+    "防腐劑",
+    2,
+    [
+
+    ]
+  ],
+  [
+    "Dehydroacetic Acid",
+    "脫氫醋酸",
+    "防腐劑",
+    2,
+    [
+
+    ]
+  ],
+  [
+    "Caprylhydroxamic Acid",
+    "辛醯羥肟酸",
+    "防腐輔助",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Hydroxyacetophenone",
+    "對羥基苯乙酮",
+    "抗氧化、防腐輔助",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Tromethamine",
+    "氨丁三醇",
+    "pH 調節",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Aminomethyl Propanol",
+    "胺甲基丙醇",
+    "pH 調節",
+    2,
+    [
+
+    ]
+  ],
+  [
+    "Triethanolamine",
+    "三乙醇胺",
+    "pH 調節",
+    3,
+    [
+
+    ]
+  ],
+  [
+    "Sodium Lactate",
+    "乳酸鈉",
+    "保濕、pH",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Sodium Chloride",
+    "氯化鈉",
+    "增稠、電解質",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Magnesium Sulfate",
+    "硫酸鎂",
+    "穩定、電解質",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Calcium Chloride",
+    "氯化鈣",
+    "電解質",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Cyclohexasiloxane",
+    "環六聚二甲基矽氧烷",
+    "揮發矽靈",
+    2,
+    [
+      "D6"
+    ]
+  ],
+  [
+    "Dimethiconol",
+    "二甲基矽烷醇",
+    "柔順、成膜",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Phenyl Trimethicone",
+    "苯基三甲基矽氧烷",
+    "柔順、光澤",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Trimethylsiloxysilicate",
+    "三甲基矽烷氧基矽酸酯",
+    "成膜",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "VP/VA Copolymer",
+    "VP／VA 共聚物",
+    "成膜",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "PVP",
+    "聚乙烯吡咯烷酮",
+    "成膜",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Polyvinyl Alcohol",
+    "聚乙烯醇",
+    "成膜",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Hydrolyzed Hyaluronic Acid",
+    "水解玻尿酸",
+    "保濕、滲透",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Sodium Acetylated Hyaluronate",
+    "乙醯化玻尿酸鈉",
+    "保濕",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Hydroxypropyltrimonium Hyaluronate",
+    "羥丙基三甲基銨玻尿酸",
+    "保濕、吸附",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Biosaccharide Gum-1",
+    "生物糖膠-1",
+    "保濕、舒緩",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Gluconolactone",
+    "葡糖酸內酯",
+    "保濕、溫和去角質",
+    1,
+    [
+      "PHA"
+    ]
+  ],
+  [
+    "Lactobionic Acid",
+    "乳糖酸",
+    "保濕、溫和去角質",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Maltobionic Acid",
+    "麥芽糖酸",
+    "保濕、溫和去角質",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Polyglutamic Acid",
+    "聚麩胺酸",
+    "保濕",
+    1,
+    [
+      "PGA"
+    ]
+  ],
+  [
+    "Sodium Polyglutamate",
+    "聚麩胺酸鈉",
+    "保濕",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Bakuchiol",
+    "補骨脂酚",
+    "抗老、舒緩",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Retinyl Palmitate",
+    "視黃醇棕櫚酸酯",
+    "抗老",
+    3,
+    [
+
+    ]
+  ],
+  [
+    "Retinal",
+    "視黃醛",
+    "抗老",
+    5,
+    [
+
+    ]
+  ],
+  [
+    "Hydroxypinacolone Retinoate",
+    "羥基頻那酮視黃酸酯",
+    "抗老",
+    3,
+    [
+      "HPR"
+    ]
+  ],
+  [
+    "Niacin",
+    "菸鹼酸",
+    "調理",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Vitamin B12",
+    "維生素 B12",
+    "舒緩",
+    1,
+    [
+      "CYANOCOBALAMIN"
+    ]
+  ],
+  [
+    "Biotin",
+    "生物素",
+    "調理",
+    1,
+    [
+      "VITAMIN B7"
+    ]
+  ],
+  [
+    "Folic Acid",
+    "葉酸",
+    "調理",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Riboflavin",
+    "核黃素",
+    "調理",
+    1,
+    [
+      "VITAMIN B2"
+    ]
+  ],
+  [
+    "Thiamine HCl",
+    "硫胺素鹽酸鹽",
+    "調理",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Pyridoxine",
+    "吡哆醇",
+    "調理",
+    1,
+    [
+      "VITAMIN B6"
+    ]
+  ],
+  [
+    "Maltodextrin",
+    "麥芽糊精",
+    "載體、質地",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Dextrin",
+    "糊精",
+    "載體",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Cyclodextrin",
+    "環糊精",
+    "包覆、穩定",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Bentonite",
+    "膨潤土",
+    "吸油、懸浮",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Kaolin",
+    "高嶺土",
+    "吸油、清潔",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Charcoal Powder",
+    "竹炭粉",
+    "吸附",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Alumina",
+    "氧化鋁",
+    "質地、防曬輔助",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Stearalkonium Hectorite",
+    "硬脂基氯化銨水輝石",
+    "懸浮穩定",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Propylene Carbonate",
+    "碳酸丙烯酯",
+    "溶劑",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Ethyl Alcohol",
+    "乙醇",
+    "溶劑",
+    4,
+    [
+      "ETHANOL"
+    ]
+  ],
+  [
+    "SD Alcohol 40",
+    "變性酒精 40",
+    "溶劑",
+    4,
+    [
+
+    ]
+  ],
+  [
+    "Witch Hazel",
+    "金縷梅",
+    "收斂、舒緩",
+    1,
+    [
+      "HAMAMELIS VIRGINIANA WATER"
+    ]
+  ],
+  [
+    "Hamamelis Virginiana Water",
+    "金縷梅水",
+    "收斂、舒緩",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Rosa Damascena Flower Water",
+    "大馬士革玫瑰花水",
+    "舒緩、香氛",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Lavandula Angustifolia Oil",
+    "薰衣草精油",
+    "香氛",
+    3,
+    [
+      "LAVENDER OIL"
+    ]
+  ],
+  [
+    "Melaleuca Alternifolia Leaf Oil",
+    "茶樹精油",
+    "抗菌、香氛",
+    3,
+    [
+      "TEA TREE OIL"
+    ]
+  ],
+  [
+    "Eucalyptus Globulus Leaf Oil",
+    "尤加利精油",
+    "香氛",
+    3,
+    [
+
+    ]
+  ],
+  [
+    "Citrus Limon Peel Oil",
+    "檸檬果皮油",
+    "香氛",
+    4,
+    [
+
+    ]
+  ],
+  [
+    "Citrus Aurantium Dulcis Peel Oil",
+    "甜橙果皮油",
+    "香氛",
+    4,
+    [
+
+    ]
+  ],
+  [
+    "Limonene",
+    "檸檬烯",
+    "香氛成分",
+    5,
+    [
+
+    ]
+  ],
+  [
+    "Linalool",
+    "芳樟醇",
+    "香氛成分",
+    5,
+    [
+
+    ]
+  ],
+  [
+    "Citronellol",
+    "香茅醇",
+    "香氛成分",
+    5,
+    [
+
+    ]
+  ],
+  [
+    "Geraniol",
+    "香葉醇",
+    "香氛成分",
+    5,
+    [
+
+    ]
+  ],
+  [
+    "Citral",
+    "檸檬醛",
+    "香氛成分",
+    5,
+    [
+
+    ]
+  ],
+  [
+    "Eugenol",
+    "丁香酚",
+    "香氛成分",
+    5,
+    [
+
+    ]
+  ],
+  [
+    "Coumarin",
+    "香豆素",
+    "香氛成分",
+    4,
+    [
+
+    ]
+  ],
+  [
+    "Benzyl Benzoate",
+    "苯甲酸苄酯",
+    "香氛溶劑",
+    3,
+    [
+
+    ]
+  ],
+  [
+    "Benzyl Salicylate",
+    "水楊酸苄酯",
+    "香氛",
+    3,
+    [
+
+    ]
+  ],
+  [
+    "Hexyl Cinnamal",
+    "己基肉桂醛",
+    "香氛",
+    4,
+    [
+
+    ]
+  ],
+  [
+    "Butylphenyl Methylpropional",
+    "丁苯基甲基丙醛",
+    "香氛",
+    5,
+    [
+      "LILIAL"
+    ]
+  ],
+  [
+    "Hydroxyisohexyl 3-Cyclohexene Carboxaldehyde",
+    "羥異己基 3-環己烯甲醛",
+    "香氛",
+    5,
+    [
+      "LYRAL"
+    ]
+  ],
+  [
+    "Diisopropyl Sebacate",
+    "二異丙基癸二酸酯",
+    "潤膚、溶劑",
+    1,
+    [
+      "DIISOPROPYL SEBACATE"
+    ]
+  ],
+  [
+    "Diphenylsiloxy Phenyl Trimethicone",
+    "二苯基矽氧基苯基三甲基矽氧烷",
+    "柔順、光澤",
+    1,
+    [
+      "DIPHENYLSILOXY PHENYL TRIMETHICONE"
+    ]
+  ],
+  [
+    "Ethylhexyl Methoxycinnamate",
+    "甲氧基肉桂酸乙基己酯",
+    "化學防曬",
+    3,
+    [
+      "OCTINOXATE",
+      "METHOXYCINNAMATE"
+    ]
+  ],
+  [
+    "Homosalate",
+    "水楊酸三甲環己酯",
+    "化學防曬",
+    3,
+    [
+
+    ]
+  ],
+  [
+    "Octocrylene",
+    "奥克立林",
+    "化學防曬",
+    3,
+    [
+
+    ]
+  ],
+  [
+    "Butyl Methoxydibenzoylmethane",
+    "丁基甲氧基二苯醯基甲烷",
+    "化學防曬",
+    3,
+    [
+      "AVOBENZONE"
+    ]
+  ],
+  [
+    "Polysilicone-15",
+    "聚矽氧烷-15",
+    "化學防曬",
+    2,
+    [
+
+    ]
+  ],
+  [
+    "Diethylamino Hydroxybenzoyl Hexyl Benzoate",
+    "二乙胺基羥苯甲醯基苯甲酸己酯",
+    "化學防曬",
+    2,
+    [
+      "UVINUL A PLUS"
+    ]
+  ],
+  [
+    "Bis-Ethylhexyloxyphenol Methoxyphenyl Triazine",
+    "雙-乙基己氧苯酚甲氧苯基三嗪",
+    "化學防曬",
+    2,
+    [
+      "TINOSORB S"
+    ]
+  ],
+  [
+    "Methylene Bis-Benzotriazolyl Tetramethylbutylphenol",
+    "亞甲基雙-苯并三唑基四甲基丁基酚",
+    "化學防曬",
+    2,
+    [
+      "TINOSORB M"
+    ]
+  ],
+  [
+    "Ethylhexyl Triazone",
+    "乙基己基三嗪酮",
+    "化學防曬",
+    2,
+    [
+      "UVINUL T 150"
+    ]
+  ],
+  [
+    "Phenethyl Benzoate",
+    "苯乙基苯甲酸酯",
+    "潤膚、溶劑",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Dibutyl Adipate",
+    "己二酸二丁酯",
+    "潤膚、溶劑",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Diisopropyl Adipate",
+    "己二酸二異丙酯",
+    "潤膚、溶劑",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "VP/Eicosene Copolymer",
+    "VP／二十碳烯共聚物",
+    "成膜",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Acrylates/Dimethicone Copolymer",
+    "丙烯酸酯／聚二甲基矽氧烷共聚物",
+    "成膜",
+    1,
+    [
+
+    ]
+  ],
+  [
+    "Dimethicone/Vinyl Dimethicone Crosspolymer",
+    "聚二甲基矽氧烷／乙烯基聚二甲基矽氧烷交聯聚合物",
+    "質地、柔焦",
+    1,
+    [
+
+    ]
+  ]
+]
