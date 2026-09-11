@@ -14,7 +14,7 @@ struct CameraView: View {
         #else
         CameraUnavailableView(
             title: "相機僅支援 iOS 裝置",
-            message: "請在 iPhone 或 iPad 上使用相機掃描成分表。"
+            message: "請在 iPhone 上使用相機掃描成分表。"
         )
         #endif
     }
