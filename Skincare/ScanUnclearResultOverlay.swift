@@ -58,10 +58,10 @@ struct ScanUnclearResultOverlay: View {
                     Button(action: onManualInput) {
                         Text("貼上成分表")
                             .font(.subheadline.weight(.semibold))
-                            .foregroundColor(Theme.ink)
+                            .foregroundColor(.white)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 12)
-                            .background(Color.white, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                            .background(Theme.accent, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
                     }
                     .buttonStyle(.plain)
                 }
@@ -140,7 +140,7 @@ struct WeakRecognitionHintCard: View {
                         .foregroundColor(Theme.ink)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 10)
-                        .background(Color.white.opacity(0.85), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                        .background(Theme.elevated, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
                 }
                 .buttonStyle(.plain)
 
@@ -150,7 +150,7 @@ struct WeakRecognitionHintCard: View {
                         .foregroundColor(Theme.ink)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 10)
-                        .background(Color.white.opacity(0.85), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                        .background(Theme.elevated, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
                 }
                 .buttonStyle(.plain)
             }

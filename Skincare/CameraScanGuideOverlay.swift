@@ -224,7 +224,7 @@ struct MultiShotCaptureBar: View {
                 }
                 Text(MultiShotCaptureGuide.badgeText(forCapturedCount: capturedCount))
                     .font(.caption2.weight(.bold))
-                    .foregroundColor(Theme.ink)
+                    .foregroundColor(Theme.inkOnLight)
                     .padding(.horizontal, 7)
                     .padding(.vertical, 3)
                     .background(Color.white, in: Capsule())

@@ -17,6 +17,8 @@ enum Theme {
 
     /// 淺色卡片／輸入框底（深色模式下不再用死白）。
     static let elevated = Color.appElevated
+    /// 白底／相機白鈕上的字，固定深色（不隨系統深淺變白）。
+    static let inkOnLight = Color(hex: "2B2520")
 }
 
 extension Color {

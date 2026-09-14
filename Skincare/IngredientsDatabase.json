@@ -215447,6 +215447,21 @@
     "category": "surfactant - emulsifying、黏度調節"
   },
   {
+    "englishName": "PEG-6",
+    "chineseName": "聚乙二醇-6",
+    "function": "保濕劑、溶劑",
+    "safetyRating": "1",
+    "aliases": [
+      "Polyethylene Glycol 6",
+      "Polyethylene Glycol-6",
+      "PEG 6",
+      "マクロゴール6",
+      "ポリエチレングリコール6"
+    ],
+    "name": "PEG-6",
+    "category": "保濕劑、溶劑"
+  },
+  {
     "englishName": "PEG-6 ALMOND GLYCERIDES",
     "chineseName": "PEG-6 ALMOND GLYCERIDES",
     "function": "skin conditioning - emollient、surfactant - emulsifying",
@@ -216633,6 +216648,21 @@
     ],
     "name": "PEG-78 GLYCERYL COCOATE",
     "category": "surfactant - cleansing、surfactant - emulsifying"
+  },
+  {
+    "englishName": "PEG-8",
+    "chineseName": "聚乙二醇-8",
+    "function": "保濕劑、溶劑",
+    "safetyRating": "1",
+    "aliases": [
+      "Polyethylene Glycol 8",
+      "Polyethylene Glycol-8",
+      "PEG 8",
+      "マクロゴール8",
+      "ポリエチレングリコール8"
+    ],
+    "name": "PEG-8",
+    "category": "保濕劑、溶劑"
   },
   {
     "englishName": "PEG-8 ALLYL ETHER",
