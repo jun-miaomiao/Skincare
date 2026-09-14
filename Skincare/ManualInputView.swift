@@ -100,7 +100,7 @@ struct ManualInputView: View {
                 .focused($focusedField, equals: .name)
                 .padding(.horizontal, 14)
                 .padding(.vertical, 12)
-                .background(Color.white.opacity(0.72), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .background(Theme.elevated.opacity(0.92), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
                 .overlay(
                     RoundedRectangle(cornerRadius: 14, style: .continuous)
                         .stroke(Theme.cardStroke, lineWidth: 1)
@@ -118,7 +118,7 @@ struct ManualInputView: View {
                 .focused($focusedField, equals: .body)
                 .padding(10)
                 .scrollContentBackground(.hidden)
-                .background(Color.white.opacity(0.72), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .background(Theme.elevated.opacity(0.92), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
                 .overlay(
                     RoundedRectangle(cornerRadius: 14, style: .continuous)
                         .stroke(Theme.cardStroke, lineWidth: 1)

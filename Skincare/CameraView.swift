@@ -89,10 +89,11 @@ private struct CameraViewIOS: View {
     private var cameraBody: some View {
         ZStack {
             if camera.isConfigured {
-                CameraPreviewView(session: camera.session)
-                    // 僅延伸上方，不可蓋過底部系統 TabBar。
-                    .ignoresSafeArea(edges: .top)
-                    .allowsHitTesting(false)
+                CameraPreviewView(session: camera.session) { devicePoint in
+                    camera.focus(atDevicePoint: devicePoint)
+                }
+                // 僅延伸上方，不可蓋過底部系統 TabBar。
+                .ignoresSafeArea(edges: .top)
             } else {
                 placeholderBackground
                     .allowsHitTesting(false)

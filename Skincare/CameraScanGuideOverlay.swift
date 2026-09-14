@@ -40,13 +40,13 @@ struct CameraScanGuideOverlay: View {
                     .position(x: rect.midX, y: rect.midY)
                     .shadow(color: .black.opacity(0.35), radius: 4, y: 1)
 
-                Text("請將成分表對準此框")
-                    .font(.caption.weight(.semibold))
-                    .foregroundColor(.white)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 5)
-                    .background(Color.black.opacity(0.45), in: Capsule())
-                    .position(x: rect.midX, y: rect.maxY - 18)
+            Text("請將成分表對準此框（可點螢幕對焦）")
+                .font(.caption.weight(.semibold))
+                .foregroundColor(.white)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 5)
+                .background(Color.black.opacity(0.45), in: Capsule())
+                .position(x: rect.midX, y: rect.maxY - 18)
             }
             .preference(key: CameraPreviewSizeKey.self, value: geo.size)
         }

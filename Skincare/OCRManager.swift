@@ -1,7 +1,7 @@
 import CoreImage
 import Foundation
 import UIKit
-import Vision
+@preconcurrency import Vision
 
 struct OCRLineResult: Sendable {
     let text: String
@@ -54,40 +54,28 @@ class OCRManager {
 
         let visionCGImage = UIImage.redrawCGImageInSRGB(cgImage) ?? cgImage
 
-        return await withCheckedContinuation { continuation in
-            let request = VNRecognizeTextRequest { request, error in
-                guard error == nil else {
-                    continuation.resume(returning: OCRRecognitionResult(lines: []))
-                    return
-                }
-
-                guard let observations = request.results as? [VNRecognizedTextObservation] else {
-                    continuation.resume(returning: OCRRecognitionResult(lines: []))
-                    return
-                }
-
-                let lines: [OCRLineResult] = observations.compactMap { observation in
-                    guard let candidate = observation.topCandidates(1).first else { return nil }
-                    return OCRLineResult(text: candidate.string, confidence: candidate.confidence)
-                }
-
-                continuation.resume(returning: OCRRecognitionResult(lines: lines))
-            }
-
+        // Run Vision entirely inside a detached task (no completion-handler / queue captures).
+        let cgImageForOCR = visionCGImage
+        return await Task.detached(priority: .userInitiated) {
+            let request = VNRecognizeTextRequest()
             request.recognitionLevel = .accurate
             request.usesLanguageCorrection = false
             request.recognitionLanguages = ["en-US", "zh-Hant", "ja-JP", "ko-KR"]
 
-            let handler = VNImageRequestHandler(cgImage: visionCGImage, options: [:])
-
-            DispatchQueue.global(qos: .userInitiated).async {
-                do {
-                    try handler.perform([request])
-                } catch {
-                    continuation.resume(returning: OCRRecognitionResult(lines: []))
-                }
+            let handler = VNImageRequestHandler(cgImage: cgImageForOCR, options: [:])
+            do {
+                try handler.perform([request])
+            } catch {
+                return OCRRecognitionResult(lines: [])
             }
-        }
+
+            let observations = request.results ?? []
+            let lines: [OCRLineResult] = observations.compactMap { observation in
+                guard let candidate = observation.topCandidates(1).first else { return nil }
+                return OCRLineResult(text: candidate.string, confidence: candidate.confidence)
+            }
+            return OCRRecognitionResult(lines: lines)
+        }.value
     }
 
     static func prepareImageForOCR(_ image: UIImage, maxLongEdge: CGFloat = 2000) -> UIImage {

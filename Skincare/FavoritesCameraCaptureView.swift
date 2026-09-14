@@ -30,9 +30,10 @@ struct FavoritesCameraCaptureView: View {
         ZStack {
             #if os(iOS)
             if camera.isConfigured {
-                CameraPreviewView(session: camera.session)
-                    .ignoresSafeArea()
-                    .allowsHitTesting(false)
+                CameraPreviewView(session: camera.session) { devicePoint in
+                    camera.focus(atDevicePoint: devicePoint)
+                }
+                .ignoresSafeArea()
             } else {
                 Color.black.ignoresSafeArea()
                     .allowsHitTesting(false)

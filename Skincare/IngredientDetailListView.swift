@@ -996,7 +996,7 @@ private struct IngredientOrderNoteCard: View {
         }
         .padding(12)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color(white: 0.92).opacity(0.85), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .background(Theme.elevated.opacity(0.9), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
     }
 }
 
@@ -1007,7 +1007,7 @@ enum SafetyScoreStyle {
 
     static func color(for score: Int?) -> Color {
         guard let score else {
-            return Color(white: 0.82)
+            return Theme.muted.opacity(0.45)
         }
         switch score {
         case 1...2:
@@ -1017,7 +1017,7 @@ enum SafetyScoreStyle {
         case 7...9:
             return Theme.blush
         default:
-            return Color(white: 0.82)
+            return Theme.muted.opacity(0.45)
         }
     }
 
@@ -1149,7 +1149,7 @@ private struct IngredientDetailRow: View {
                 if let chineseName, !chineseName.isEmpty {
                     Text(chineseName)
                         .font(.system(size: 15))
-                        .foregroundColor(isHighlightAlert ? Theme.blush.opacity(0.85) : .secondary)
+                        .foregroundColor(isHighlightAlert ? Theme.blush.opacity(0.85) : Theme.muted)
                         .lineLimit(1)
                         .truncationMode(.tail)
                 } else if isUnmatched {
@@ -1205,7 +1205,8 @@ private struct IngredientDetailRow: View {
                 ingredientChineseName: chineseName,
                 score: score,
                 functionDescription: item.databaseItem?.fullFunctionDescription,
-                skinReasons: detailReasons
+                skinReasons: detailReasons,
+                aliases: item.databaseItem?.aliases ?? []
             )
             .presentationDetents([.fraction(detailReasons.isEmpty ? 0.61 : 0.72)])
             .presentationDragIndicator(.visible)
@@ -1252,7 +1253,7 @@ private struct IngredientDetailRow: View {
         case .skinFriendly:
             return Theme.sage.opacity(0.16)
         case .traceNote:
-            return Color(white: 0.90).opacity(0.85)
+            return Theme.elevated.opacity(0.9)
         }
     }
 
@@ -1289,7 +1290,7 @@ private struct IngredientDetailRow: View {
                 .minimumScaleFactor(0.85)
                 .padding(.horizontal, 8)
                 .padding(.vertical, 4)
-                .background(Color(white: 0.90).opacity(0.9), in: Capsule())
+                .background(Theme.cardStroke.opacity(0.95), in: Capsule())
         } else if let functionTag {
             Text(functionTag)
                 .font(.caption2.weight(.medium))
@@ -1298,7 +1299,7 @@ private struct IngredientDetailRow: View {
                 .minimumScaleFactor(0.85)
                 .padding(.horizontal, 8)
                 .padding(.vertical, 4)
-                .background(Color(white: 0.90).opacity(0.9), in: Capsule())
+                .background(Theme.cardStroke.opacity(0.95), in: Capsule())
                 .fixedSize(horizontal: true, vertical: false)
         } else {
             Text("—")
@@ -1315,6 +1316,15 @@ struct SafetyScoreExplanationView: View {
     /// 完整功能描述（未縮寫），例如「硬脂基氯化銨水輝石：增稠與懸浮穩定劑」。
     var functionDescription: String? = nil
     var skinReasons: [String] = []
+    var aliases: [String] = []
+
+    private var euHighlight: ModernEUSunscreenHighlight.Info? {
+        ModernEUSunscreenHighlight.match(
+            englishName: ingredientEnglishName,
+            chineseName: ingredientChineseName,
+            aliases: aliases
+        )
+    }
 
     var body: some View {
         NavigationStack {
@@ -1328,6 +1338,11 @@ struct SafetyScoreExplanationView: View {
 
                     if let functionDescription, !functionDescription.isEmpty {
                         functionSection(functionDescription)
+                            .padding(.top, 14)
+                    }
+
+                    if let euHighlight {
+                        modernEUSunscreenCard(euHighlight)
                             .padding(.top, 14)
                     }
 
@@ -1356,6 +1371,30 @@ struct SafetyScoreExplanationView: View {
         }
     }
 
+    private func modernEUSunscreenCard(_ info: ModernEUSunscreenHighlight.Info) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Label(info.tradeLabel, systemImage: "sun.max.fill")
+                .font(.subheadline.weight(.semibold))
+                .foregroundColor(Theme.sage)
+
+            Text("新型歐洲主流防曬成分")
+                .font(.caption.weight(.semibold))
+                .foregroundColor(Theme.ink)
+
+            Text(info.summary)
+                .font(.caption)
+                .foregroundColor(Theme.muted)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Theme.sage.opacity(0.10), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .stroke(Theme.sage.opacity(0.22), lineWidth: 1)
+        }
+    }
+
     private func functionSection(_ description: String) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("功能說明")
@@ -1369,7 +1408,7 @@ struct SafetyScoreExplanationView: View {
                 .padding(12)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .background(
-                    Color(white: 0.94).opacity(0.95),
+                    Theme.elevated.opacity(0.95),
                     in: RoundedRectangle(cornerRadius: 12, style: .continuous)
                 )
         }

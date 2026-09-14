@@ -160,16 +160,37 @@ struct IngredientAlertSettingsView: View {
                 )
                 .onSubmit { commitBatchInput() }
 
-            Button(action: commitBatchInput) {
-                Text("批次新增")
-                    .font(.caption.weight(.semibold))
-                    .foregroundColor(.white)
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 8)
-                    .background(Theme.accent, in: Capsule())
+            HStack(spacing: 10) {
+                Button(action: commitBatchInput) {
+                    Text("批次新增")
+                        .font(.caption.weight(.semibold))
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 8)
+                        .background(Theme.accent, in: Capsule())
+                }
+                .buttonStyle(.plain)
+                .disabled(batchInputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+
+                Spacer(minLength: 8)
+
+                Button(action: clearAllCustomBlocked) {
+                    Text("全部取消")
+                        .font(.caption.weight(.semibold))
+                        .foregroundColor(Theme.blush)
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 8)
+                        .background(Theme.blush.opacity(0.12), in: Capsule())
+                        .overlay(
+                            Capsule()
+                                .stroke(Theme.blush.opacity(0.35), lineWidth: 1)
+                        )
+                }
+                .buttonStyle(.plain)
+                .disabled(profile.customBlockedIngredients.isEmpty)
+                .opacity(profile.customBlockedIngredients.isEmpty ? 0.45 : 1)
+                .accessibilityLabel("全部取消自訂風險成分")
             }
-            .buttonStyle(.plain)
-            .disabled(batchInputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
         }
     }
 
@@ -223,6 +244,10 @@ struct IngredientAlertSettingsView: View {
         guard !parsed.isEmpty else { return }
         profile.addCustomBlockedIngredients(parsed)
         batchInputText = ""
+    }
+
+    private func clearAllCustomBlocked() {
+        profile.customBlockedIngredients = []
     }
 }
 
@@ -283,23 +308,26 @@ private struct RemovableIngredientTag: View {
     let onRemove: () -> Void
 
     var body: some View {
-        HStack(spacing: 6) {
-            Text(name)
-                .font(.caption.weight(.semibold))
-                .lineLimit(1)
+        Button(action: onRemove) {
+            HStack(spacing: 6) {
+                Text(name)
+                    .font(.caption.weight(.semibold))
+                    .lineLimit(1)
 
-            Button(action: onRemove) {
                 Image(systemName: "xmark.circle.fill")
                     .font(.caption)
                     .foregroundColor(Theme.muted)
             }
-            .buttonStyle(.plain)
+            .foregroundColor(Theme.accent)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 7)
+            .background(Theme.accent.opacity(0.10), in: Capsule())
+            .overlay(Capsule().stroke(Theme.cardStroke, lineWidth: 1))
+            .contentShape(Capsule())
         }
-        .foregroundColor(Theme.accent)
-        .padding(.horizontal, 10)
-        .padding(.vertical, 7)
-        .background(Theme.accent.opacity(0.10), in: Capsule())
-        .overlay(Capsule().stroke(Theme.cardStroke, lineWidth: 1))
+        .buttonStyle(.plain)
+        .accessibilityLabel("取消 \(name)")
+        .accessibilityHint("點一下即可從此清單移除")
     }
 }
 

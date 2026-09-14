@@ -82,7 +82,7 @@ private struct ProfileFormContent: View {
                 #endif
             }
 
-            Text("點擊頭像更換照片")
+            Text("編輯")
                 .font(.caption)
                 .foregroundColor(Theme.muted)
         }
@@ -103,7 +103,7 @@ private struct ProfileFormContent: View {
                         .font(.title3)
                         .foregroundColor(Theme.accent)
                         .frame(width: 44, height: 44)
-                        .background(Color.white.opacity(0.9), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                        .background(Theme.elevated.opacity(0.95), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
 
                     VStack(alignment: .leading, spacing: 4) {
                         Text(subscriptionStore.isPremium ? "已解鎖完整使用" : "解鎖方案")
@@ -267,7 +267,7 @@ private struct ProfileFormContent: View {
                         Text("資料保存在本機與 iCloud")
                             .font(.headline)
                             .foregroundColor(Theme.ink)
-                        Text("掃描紀錄、我的最愛與個人偏好保存在此裝置；登入 iCloud 時可自動同步。若要刪除掃描紀錄，請至「掃描紀錄」頁使用「選取」進行批量刪除。")
+                        Text("掃描紀錄、我的最愛與個人偏好保存在此裝置；登入 iCloud 時可自動同步。")
                             .font(.caption)
                             .foregroundColor(Theme.muted)
                             .fixedSize(horizontal: false, vertical: true)

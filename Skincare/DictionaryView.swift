@@ -216,10 +216,10 @@ struct DictionaryView: View {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("\(allItems.count) 筆")
                         .font(.title2.weight(.bold))
-                        .foregroundColor(.primary)
+                        .foregroundColor(Theme.ink)
                     Text("已收錄，請用搜尋查找")
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(Theme.muted)
                 }
 
                 Spacer()
@@ -227,15 +227,15 @@ struct DictionaryView: View {
                 VStack(alignment: .trailing, spacing: 4) {
                     Text(Self.databaseVersionLabel)
                         .font(.title2.weight(.bold))
-                        .foregroundColor(.primary)
+                        .foregroundColor(Theme.ink)
                     Text("資料庫版本")
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(Theme.muted)
                 }
             }
             .padding()
             .frame(maxWidth: .infinity)
-            .background(Color(.secondarySystemBackground))
+            .background(Theme.elevated)
             .cornerRadius(12)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -360,7 +360,7 @@ private struct DictionaryIngredientRow: View {
                     .minimumScaleFactor(0.85)
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
-                    .background(Color(white: 0.90).opacity(0.9), in: Capsule())
+                    .background(Theme.cardStroke.opacity(0.9), in: Capsule())
                     .fixedSize(horizontal: true, vertical: false)
             }
         }

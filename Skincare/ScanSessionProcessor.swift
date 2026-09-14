@@ -39,6 +39,17 @@ enum RecognitionTier: Sendable, Equatable, Hashable {
 }
 
 enum ScanSessionProcessor {
+    /// Copy SwiftData profile prefs on the main actor without crossing a @Sendable capture of `UserProfile`.
+    private static func preferenceSnapshot(
+        from profile: UserProfile?
+    ) async -> (blockedTags: [String], customIngredients: [String]) {
+        guard let profile else { return ([], []) }
+        nonisolated(unsafe) let unsafeProfile = profile
+        return await MainActor.run {
+            (unsafeProfile.blockedTags, unsafeProfile.customBlockedIngredients)
+        }
+    }
+
     /// 單張向下相容入口。
     static func analyze(imageData: Data, profile: UserProfile?) async -> ScanSessionResult {
         await analyze(imageDataList: [imageData], profile: profile)
@@ -46,8 +57,7 @@ enum ScanSessionProcessor {
 
     /// 手動貼上／輸入成分文字：略過 OCR，走字典主引擎。
     static func analyze(text: String, profile: UserProfile?) async -> ScanSessionResult {
-        let blockedTags = await MainActor.run { profile?.blockedTags ?? [] }
-        let customIngredients = await MainActor.run { profile?.customBlockedIngredients ?? [] }
+        let (blockedTags, customIngredients) = await preferenceSnapshot(from: profile)
         let sourceText = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !sourceText.isEmpty else {
             return ScanSessionResult(
@@ -72,8 +82,7 @@ enum ScanSessionProcessor {
         profile: UserProfile?,
         usesIngredientBandCrop: Bool = false
     ) async -> ScanSessionResult {
-        let blockedTags = await MainActor.run { profile?.blockedTags ?? [] }
-        let customIngredients = await MainActor.run { profile?.customBlockedIngredients ?? [] }
+        let (blockedTags, customIngredients) = await preferenceSnapshot(from: profile)
 
         let images = Array(imageDataList.prefix(3))
         guard !images.isEmpty else {
@@ -284,8 +293,7 @@ enum ScanSessionProcessor {
         previousLineCount: Int?,
         previousImageCount: Int
     ) async -> ScanSessionResult {
-        let blockedTags = await MainActor.run { profile?.blockedTags ?? [] }
-        let customIngredients = await MainActor.run { profile?.customBlockedIngredients ?? [] }
+        let (blockedTags, customIngredients) = await preferenceSnapshot(from: profile)
 
         let followUp = await analyze(
             imageDataList: [followUpImageData],

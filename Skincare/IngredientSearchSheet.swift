@@ -87,7 +87,7 @@ struct IngredientSearchSheet: View {
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 10)
-        .background(Color(white: 0.94), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .background(Theme.elevated, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
     }
 
     @ViewBuilder

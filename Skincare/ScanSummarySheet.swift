@@ -419,11 +419,11 @@ struct ScanSummarySheet: View {
         HStack(alignment: .top, spacing: 6) {
             Image(systemName: "info.circle")
                 .font(.caption)
-                .foregroundColor(.secondary)
+                .foregroundColor(Theme.muted)
                 .padding(.top, 1.5)
             Text("辨識結果僅供參考，建議核對實體瓶身全成分。")
                 .font(.caption)
-                .foregroundColor(.secondary)
+                .foregroundColor(Theme.muted)
                 .multilineTextAlignment(.leading)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -441,7 +441,7 @@ struct ScanSummarySheet: View {
 
                 Text("辨識可能未完全")
                     .font(.subheadline.weight(.semibold))
-                    .foregroundColor(.primary)
+                    .foregroundColor(Theme.ink)
 
                 Spacer()
             }
@@ -460,7 +460,7 @@ struct ScanSummarySheet: View {
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 9)
                         .background(
-                            Color.white.opacity(0.72),
+                            Theme.elevated.opacity(0.92),
                             in: RoundedRectangle(cornerRadius: 8, style: .continuous)
                         )
                         .overlay(

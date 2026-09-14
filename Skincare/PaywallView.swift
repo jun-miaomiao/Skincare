@@ -144,7 +144,7 @@ struct PaywallView: View {
             }
             .padding(14)
             .background(
-                selected ? Theme.primaryLight : Color.white.opacity(0.72),
+                selected ? Theme.primaryLight : Theme.elevated.opacity(0.92),
                 in: RoundedRectangle(cornerRadius: 16, style: .continuous)
             )
             .overlay(

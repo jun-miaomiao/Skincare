@@ -54,6 +54,9 @@ struct MainTabView: View {
                 .tag(AppTab.profile)
         }
         .accentColor(Theme.accent)
+        .tint(Theme.accent)
+        .toolbarBackground(Theme.background, for: .tabBar)
+        .toolbarBackground(.visible, for: .tabBar)
         .environmentObject(scanLaunch)
     }
 }

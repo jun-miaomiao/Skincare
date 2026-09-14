@@ -517,9 +517,9 @@ private struct ScanHistoryRow: View {
 
             Image(systemName: "doc.text.magnifyingglass")
                 .font(.body.weight(.semibold))
-                .foregroundColor(.secondary)
+                .foregroundColor(Theme.muted)
                 .frame(width: 44, height: 44)
-                .background(Color.gray.opacity(0.12), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .background(Theme.cardStroke.opacity(0.65), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
 
             VStack(alignment: .leading, spacing: 8) {
                 HStack(alignment: .top, spacing: 8) {

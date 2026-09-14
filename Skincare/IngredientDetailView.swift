@@ -11,6 +11,9 @@ struct IngredientDetailView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 24) {
                     header
+                    if let highlight = modernEUSunscreenHighlight {
+                        modernEUSunscreenCard(highlight)
+                    }
                     ewgSection
                     benefitsSection
                     skinAnalysisSection
@@ -23,6 +26,38 @@ struct IngredientDetailView: View {
         }
         .navigationTitle("成分詳情")
         .appDetailNavigationChrome()
+    }
+
+    private var modernEUSunscreenHighlight: ModernEUSunscreenHighlight.Info? {
+        ModernEUSunscreenHighlight.match(
+            englishName: ingredient.englishName,
+            chineseName: ingredient.chineseName,
+            aliases: ingredient.aliases ?? []
+        )
+    }
+
+    private func modernEUSunscreenCard(_ info: ModernEUSunscreenHighlight.Info) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Label(info.tradeLabel, systemImage: "sun.max.fill")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(Theme.sage)
+
+            Text("新型歐洲主流防曬成分")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(Theme.ink)
+
+            Text(info.summary)
+                .font(.caption)
+                .foregroundStyle(Theme.muted)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Theme.sage.opacity(0.10), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .stroke(Theme.sage.opacity(0.22), lineWidth: 1)
+        }
     }
 
     private var header: some View {
