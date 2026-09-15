@@ -1354,12 +1354,21 @@ struct SafetyScoreExplanationView: View {
                     legendSection
                         .padding(.top, 14)
 
-                    Text("此評級為公開資料與第三方指標彙整，供日常護膚辨識風險成分參考，非醫療或藥品規範標準。")
-                        .font(.caption)
-                        .foregroundColor(Theme.muted)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .padding(.top, 12)
-                        .padding(.bottom, 16)
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text("此評級為公開資料與第三方指標彙整，供日常護膚辨識風險成分參考，非醫療診斷、治療建議或藥品規範標準。")
+                            .font(.caption)
+                            .foregroundColor(Theme.muted)
+                            .fixedSize(horizontal: false, vertical: true)
+
+                        HStack(spacing: 16) {
+                            Link("EWG Skin Deep®", destination: LegalLinks.ewgSkinDeep)
+                            Link("EU CosIng", destination: LegalLinks.euCosIng)
+                        }
+                        .font(.caption.weight(.semibold))
+                        .foregroundColor(Theme.accent)
+                    }
+                    .padding(.top, 12)
+                    .padding(.bottom, 16)
                 }
                 .padding(.horizontal, 22)
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -1456,13 +1465,22 @@ struct SafetyScoreExplanationView: View {
     }
 
     private var sourceBanner: some View {
-        Label("對照 EWG Skin Deep® 與國際安全標準", systemImage: "info.circle.fill")
-            .font(.caption.weight(.semibold))
+        VStack(alignment: .leading, spacing: 8) {
+            Label("對照 EWG Skin Deep® 與國際化粧品成分資料", systemImage: "info.circle.fill")
+                .font(.caption.weight(.semibold))
+                .foregroundColor(Theme.accent)
+
+            HStack(spacing: 14) {
+                Link("EWG Skin Deep®", destination: LegalLinks.ewgSkinDeep)
+                Link("EU CosIng", destination: LegalLinks.euCosIng)
+            }
+            .font(.caption2.weight(.semibold))
             .foregroundColor(Theme.accent)
-            .padding(.horizontal, 12)
-            .padding(.vertical, 10)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Theme.accent.opacity(0.08), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Theme.accent.opacity(0.08), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 
     private var currentRatingCard: some View {

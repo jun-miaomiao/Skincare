@@ -1,0 +1,9 @@
+App Store Connect — IAP checklist (manual; Guideline 2.1b)
+=========================================================
+1. Business → Paid Apps Agreement must be Active.
+2. For each product (monthly / yearly / lifetime):
+   complete localization, pricing, subscription group,
+   and App Review Screenshot (paywall selecting a plan).
+3. Submit In-App Purchases for review with the new app binary.
+4. Resolution Center: IAPs submitted; paywall reload CTA fixed;
+   EWG/CosIng citations added in-app.

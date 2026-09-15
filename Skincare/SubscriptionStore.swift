@@ -67,7 +67,11 @@ final class SubscriptionStore: ObservableObject {
                 let rightRank = right.flatMap { SubscriptionProductID.storeDisplayOrder.firstIndex(of: $0) } ?? 99
                 return leftRank < rightRank
             }
-            lastErrorMessage = nil
+            if products.isEmpty {
+                lastErrorMessage = "尚未取得訂閱方案，請稍後重新載入。"
+            } else {
+                lastErrorMessage = nil
+            }
         } catch {
             lastErrorMessage = "無法載入方案，請稍後再試。"
             products = []

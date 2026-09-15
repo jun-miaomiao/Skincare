@@ -328,6 +328,9 @@ struct ScanSummarySheet: View {
             }
 
             recognitionHintBanner
+            MedicalDisclaimerFooter()
+                .padding(.horizontal, 4)
+                .padding(.top, 4)
         }
         .padding(18)
         .background(.ultraThinMaterial)

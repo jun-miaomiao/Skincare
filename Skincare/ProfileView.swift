@@ -40,6 +40,7 @@ private struct ProfileFormContent: View {
 
     @State private var showAvatarPicker = false
     @State private var showPaywall = false
+    @State private var showDataSources = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 24) {
@@ -48,6 +49,11 @@ private struct ProfileFormContent: View {
             skinPreferenceSection
             alertSettingsSection
             systemDataSection
+        }
+        .sheet(isPresented: $showDataSources) {
+            DataSourcesDisclaimerView()
+                .presentationDetents([.medium, .large])
+                .presentationDragIndicator(.visible)
         }
     }
 
@@ -279,6 +285,19 @@ private struct ProfileFormContent: View {
                     }
                     .font(.caption.weight(.semibold))
                     .foregroundColor(Theme.accent)
+
+                    Button {
+                        showDataSources = true
+                    } label: {
+                        HStack(spacing: 6) {
+                            Image(systemName: "doc.text.magnifyingglass")
+                            Text("資料來源與免責")
+                        }
+                        .font(.caption.weight(.semibold))
+                        .foregroundColor(Theme.accent)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("資料來源與免責")
                 }
             }
         }

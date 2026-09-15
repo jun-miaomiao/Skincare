@@ -269,6 +269,7 @@ struct ScanHistoryView: View {
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
+                .compositingGroup()
                 .listRowInsets(EdgeInsets(top: 7, leading: 22, bottom: 7, trailing: 22))
                 .listRowSeparator(.hidden)
                 .listRowBackground(Color.clear)
@@ -572,7 +573,9 @@ private struct ScanHistoryRow: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(16)
-        .background(.ultraThinMaterial)
+        // 實心底 + compositingGroup：避免 List 左滑時 material 模糊抽到鄰列而瞬間變形。
+        .background(Theme.surface)
+        .compositingGroup()
         .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 20, style: .continuous)

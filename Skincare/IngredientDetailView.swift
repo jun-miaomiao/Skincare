@@ -109,9 +109,12 @@ struct IngredientDetailView: View {
                     Text("分數 \(ingredient.ewgScore) / 10")
                         .font(.system(.title3, design: .serif).weight(.medium))
                         .foregroundStyle(Theme.ink)
-                    Text("分數越低，資料庫中的關注度通常越低。")
+                    Text("分數越低，資料庫中的關注度通常越低。非醫療建議。")
                         .font(.caption)
                         .foregroundStyle(Theme.muted)
+                    Link("EWG Skin Deep® 來源", destination: LegalLinks.ewgSkinDeep)
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(Theme.accent)
                 }
 
                 Spacer(minLength: 0)

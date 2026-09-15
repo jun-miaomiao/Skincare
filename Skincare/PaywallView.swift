@@ -71,7 +71,7 @@ struct PaywallView: View {
     private var benefitList: some View {
         VStack(alignment: .leading, spacing: 10) {
             benefitRow("無限相機／相簿掃描", systemImage: "camera.fill")
-            benefitRow("加入最愛、完整紀錄節奏", systemImage: "star.fill")
+            benefitRow("加入最愛保養品與保養成分", systemImage: "star.fill")
             benefitRow("規劃中：韓日文辨識與字典翻譯完善", systemImage: "globe.asia.australia.fill")
         }
         .padding(14)
@@ -110,6 +110,10 @@ struct PaywallView: View {
         }
     }
 
+    private var productsReady: Bool {
+        !store.products.isEmpty
+    }
+
     private func planCard(_ id: SubscriptionProductID) -> some View {
         let product = store.product(for: id)
         let selected = selectedID == id
@@ -136,11 +140,16 @@ struct PaywallView: View {
                             .font(.caption)
                             .foregroundColor(Theme.muted)
                     }
+                    if product == nil {
+                        Text(store.isLoadingProducts ? "價格載入中…" : "暫不可用，請重新載入")
+                            .font(.caption2)
+                            .foregroundColor(Theme.muted)
+                    }
                 }
                 Spacer(minLength: 8)
                 Text(product?.displayPrice ?? id.fallbackPriceLabel)
                     .font(.footnote.weight(.semibold))
-                    .foregroundColor(Theme.ink)
+                    .foregroundColor(product == nil ? Theme.muted : Theme.ink)
             }
             .padding(14)
             .background(
@@ -158,10 +167,10 @@ struct PaywallView: View {
 
     private var purchaseButton: some View {
         Button {
-            Task { await buySelected() }
+            Task { await primaryCTATapped() }
         } label: {
             Group {
-                if store.purchaseInFlight {
+                if store.purchaseInFlight || store.isLoadingProducts {
                     ProgressView()
                         .tint(.white)
                 } else {
@@ -175,14 +184,38 @@ struct PaywallView: View {
             .background(Theme.accent, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
         }
         .buttonStyle(.plain)
-        .disabled(store.purchaseInFlight || store.product(for: selectedID) == nil)
+        .disabled(store.purchaseInFlight || store.isLoadingProducts)
+        .accessibilityLabel(purchaseTitle)
     }
 
     private var purchaseTitle: String {
+        if store.isLoadingProducts {
+            return "載入方案中…"
+        }
         if let product = store.product(for: selectedID) {
             return "以 \(product.displayPrice) 繼續"
         }
-        return "選擇方案"
+        if productsReady {
+            return "請選擇可用方案"
+        }
+        return "重新載入方案"
+    }
+
+    private func primaryCTATapped() async {
+        if store.product(for: selectedID) != nil {
+            await buySelected()
+            return
+        }
+        await store.refresh()
+        if store.product(for: .yearly) != nil {
+            selectedID = .yearly
+        } else if let first = store.visibleProductIDs().first(where: { store.product(for: $0) != nil }) {
+            selectedID = first
+        }
+        if store.products.isEmpty {
+            store.lastErrorMessage = store.lastErrorMessage
+                ?? "目前無法載入訂閱方案，請確認網路後再試。"
+        }
     }
 
     private var footerActions: some View {
