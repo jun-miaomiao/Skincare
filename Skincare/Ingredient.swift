@@ -37,28 +37,6 @@ enum RiskLevel: String, CaseIterable, Hashable {
     }
 }
 
-enum EWGBand: String, Hashable {
-    case safe = "綠色安全"
-    case moderate = "黃色中度"
-    case high = "紅色高風險"
-
-    var tint: Color {
-        switch self {
-        case .safe: Theme.sage
-        case .moderate: Theme.gold
-        case .high: Theme.blush
-        }
-    }
-
-    var icon: String {
-        switch self {
-        case .safe: "leaf.fill"
-        case .moderate: "exclamationmark.circle.fill"
-        case .high: "xmark.octagon.fill"
-        }
-    }
-}
-
 struct Ingredient: Identifiable, Hashable {
     let id: String
     let chineseName: String
@@ -72,8 +50,10 @@ struct Ingredient: Identifiable, Hashable {
     let suitableSkinTypes: [String]
     let cautionSkinTypes: [String]
     let warnings: [String]
-    let ewgScore: Int
-    let ewgBand: EWGBand
+    /// 本 App 安心度分數（1–9）：偏法規／長期風險彙整，非刺激性。
+    let concernScore: Int
+    let concernBand: ConcernBand
+    let irritationRisk: IrritationRisk
     let risk: RiskLevel
     let accentRed: Double
     let accentGreen: Double
@@ -98,8 +78,9 @@ struct Ingredient: Identifiable, Hashable {
         suitableSkinTypes: [String],
         cautionSkinTypes: [String],
         warnings: [String],
-        ewgScore: Int,
-        ewgBand: EWGBand,
+        concernScore: Int,
+        concernBand: ConcernBand,
+        irritationRisk: IrritationRisk = .unknown,
         risk: RiskLevel,
         accentRed: Double,
         accentGreen: Double,
@@ -118,8 +99,9 @@ struct Ingredient: Identifiable, Hashable {
         self.suitableSkinTypes = suitableSkinTypes
         self.cautionSkinTypes = cautionSkinTypes
         self.warnings = warnings
-        self.ewgScore = ewgScore
-        self.ewgBand = ewgBand
+        self.concernScore = concernScore
+        self.concernBand = concernBand
+        self.irritationRisk = irritationRisk
         self.risk = risk
         self.accentRed = accentRed
         self.accentGreen = accentGreen
@@ -146,8 +128,9 @@ extension Ingredient {
                 "常見使用濃度約 2–5%，高濃度未必更有效。",
                 "少數人初期可能出現泛紅或乾燥，可隔日使用再調整。"
             ],
-            ewgScore: 1,
-            ewgBand: .safe,
+            concernScore: 1,
+            concernBand: .low,
+            irritationRisk: .low,
             risk: .low,
             accentRed: 0.62,
             accentGreen: 0.68,
@@ -171,8 +154,9 @@ extension Ingredient {
                 "外用常見濃度約 0.5–2%，勿與高濃度酸類過度疊加。",
                 "使用後加強保濕，白天務必防曬。"
             ],
-            ewgScore: 4,
-            ewgBand: .moderate,
+            concernScore: 4,
+            concernBand: .moderate,
+            irritationRisk: .high,
             risk: .moderate,
             accentRed: 0.74,
             accentGreen: 0.58,
@@ -195,8 +179,9 @@ extension Ingredient {
                 "建議晨間使用，並搭配廣譜防曬以維持亮白效果。",
                 "開封後注意氧化變色，效能會隨時間下降。"
             ],
-            ewgScore: 2,
-            ewgBand: .safe,
+            concernScore: 2,
+            concernBand: .low,
+            irritationRisk: .moderate,
             risk: .low,
             accentRed: 0.80,
             accentGreen: 0.68,

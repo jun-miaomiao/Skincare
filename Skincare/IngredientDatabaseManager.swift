@@ -1744,8 +1744,28 @@ final class IngredientDatabaseManager: @unchecked Sendable {
 
             consider(item.englishName, exactRank: 0, prefixRank: 10, containsRank: 20)
             consider(item.chineseName, exactRank: 1, prefixRank: 11, containsRank: 21)
+            consider(item.displayChineseName, exactRank: 1, prefixRank: 11, containsRank: 21)
             for alias in item.aliases ?? [] {
                 consider(alias, exactRank: 2, prefixRank: 12, containsRank: 22)
+            }
+
+            // 去空白／標點後再比對一次，讓「菸鹼酰胺」與括號註記較容易命中。
+            let compactNeedle = Self.normalizedKey(needle)
+            if compactNeedle.count >= 1 {
+                func considerCompact(_ text: String, exactRank: Int, prefixRank: Int, containsRank: Int) {
+                    let key = Self.normalizedKey(text)
+                    guard !key.isEmpty else { return }
+                    if key == compactNeedle {
+                        bestRank = min(bestRank ?? exactRank, exactRank)
+                    } else if key.hasPrefix(compactNeedle) {
+                        bestRank = min(bestRank ?? prefixRank, prefixRank)
+                    } else if key.contains(compactNeedle) {
+                        bestRank = min(bestRank ?? containsRank, containsRank)
+                    }
+                }
+                considerCompact(item.englishName, exactRank: 3, prefixRank: 13, containsRank: 23)
+                considerCompact(item.chineseName, exactRank: 4, prefixRank: 14, containsRank: 24)
+                considerCompact(item.displayChineseName, exactRank: 4, prefixRank: 14, containsRank: 24)
             }
 
             if let bestRank {

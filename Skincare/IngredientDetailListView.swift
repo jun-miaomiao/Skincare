@@ -1030,11 +1030,11 @@ enum SafetyScoreStyle {
         guard let score else { return "暫無評級資料" }
         switch score {
         case 1...2:
-            return "低風險"
+            return "較安心"
         case 3...6:
-            return "中度風險"
+            return "需留意"
         case 7...9:
-            return "高風險"
+            return "需特別留意"
         default:
             return "暫無評級資料"
         }
@@ -1044,11 +1044,11 @@ enum SafetyScoreStyle {
         guard let score else { return "暫無評級資料" }
         switch score {
         case 1...2:
-            return "刺激性低、致敏率低"
+            return "法規／長期風險相對較低（非刺激性評分）"
         case 3...6:
-            return "視添加濃度與個人膚質耐受度而定"
+            return "建議多看標示；實際風險視濃度、用途與個人膚質"
         case 7...9:
-            return "刺激性較高、易致敏或具爭議性成分"
+            return "禁／限用或長期風險較高；請另看刺激風險標籤"
         default:
             return "暫無評級資料"
         }
@@ -1122,7 +1122,7 @@ private struct IngredientDetailRow: View {
                 safetyBadge
             }
             .buttonStyle(.plain)
-            .accessibilityLabel(isUnmatched ? "修正未命中成分" : "安心度說明")
+            .accessibilityLabel(isUnmatched ? "修正未命中成分" : "安心度與刺激說明")
             .frame(width: SafetyScoreStyle.scoreColumnWidth, alignment: .center)
 
             VStack(alignment: .leading, spacing: 4) {
@@ -1206,9 +1206,10 @@ private struct IngredientDetailRow: View {
                 score: score,
                 functionDescription: item.databaseItem?.fullFunctionDescription,
                 skinReasons: detailReasons,
-                aliases: item.databaseItem?.aliases ?? []
+                aliases: item.databaseItem?.aliases ?? [],
+                databaseItem: item.databaseItem
             )
-            .presentationDetents([.fraction(detailReasons.isEmpty ? 0.61 : 0.72)])
+            .presentationDetents([.fraction(detailReasons.isEmpty ? 0.68 : 0.78)])
             .presentationDragIndicator(.visible)
         }
     }
@@ -1317,6 +1318,15 @@ struct SafetyScoreExplanationView: View {
     var functionDescription: String? = nil
     var skinReasons: [String] = []
     var aliases: [String] = []
+    var databaseItem: IngredientItem? = nil
+
+    private var irritation: IrritationRisk {
+        IrritationRiskClassifier.evaluate(
+            englishName: ingredientEnglishName,
+            chineseName: ingredientChineseName,
+            databaseItem: databaseItem
+        )
+    }
 
     private var euHighlight: ModernEUSunscreenHighlight.Info? {
         ModernEUSunscreenHighlight.match(
@@ -1334,6 +1344,9 @@ struct SafetyScoreExplanationView: View {
                         .padding(.top, 10)
 
                     currentRatingCard
+                        .padding(.top, 12)
+
+                    irritationCard
                         .padding(.top, 12)
 
                     if let functionDescription, !functionDescription.isEmpty {
@@ -1355,13 +1368,14 @@ struct SafetyScoreExplanationView: View {
                         .padding(.top, 14)
 
                     VStack(alignment: .leading, spacing: 10) {
-                        Text("此評級為公開資料與第三方指標彙整，供日常護膚辨識風險成分參考，非醫療診斷、治療建議或藥品規範標準。")
+                        Text("安心度與刺激標籤為本 App 彙整，供日常護膚辨識參考；不完全等同公開資料庫原始欄位，亦非醫療診斷、治療建議或藥品規範標準。選購請以產品標示與主管機關最新公告為準。")
                             .font(.caption)
                             .foregroundColor(Theme.muted)
                             .fixedSize(horizontal: false, vertical: true)
 
-                        HStack(spacing: 16) {
-                            Link("EWG Skin Deep®", destination: LegalLinks.ewgSkinDeep)
+                        VStack(alignment: .leading, spacing: 8) {
+                            Link("台灣・化粧品禁止使用成分", destination: LegalLinks.twCosmeticsBanned)
+                            Link("台灣・化粧品成分使用限制", destination: LegalLinks.twCosmeticsRestricted)
                             Link("EU CosIng", destination: LegalLinks.euCosIng)
                         }
                         .font(.caption.weight(.semibold))
@@ -1375,7 +1389,7 @@ struct SafetyScoreExplanationView: View {
             }
             .scrollBounceBehavior(.basedOnSize)
             .background(Theme.background.ignoresSafeArea())
-            .navigationTitle("安心度說明")
+            .navigationTitle("評級說明")
             .navigationBarTitleDisplayMode(.inline)
         }
     }
@@ -1466,16 +1480,14 @@ struct SafetyScoreExplanationView: View {
 
     private var sourceBanner: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Label("對照 EWG Skin Deep® 與國際化粧品成分資料", systemImage: "info.circle.fill")
+            Label("可公開查閱：台灣食藥署開放資料與歐盟 CosIng", systemImage: "info.circle.fill")
                 .font(.caption.weight(.semibold))
                 .foregroundColor(Theme.accent)
 
-            HStack(spacing: 14) {
-                Link("EWG Skin Deep®", destination: LegalLinks.ewgSkinDeep)
-                Link("EU CosIng", destination: LegalLinks.euCosIng)
-            }
-            .font(.caption2.weight(.semibold))
-            .foregroundColor(Theme.accent)
+            Text("分數與刺激標籤為本 App 彙整，非第三方商業評分商標。")
+                .font(.caption2)
+                .foregroundColor(Theme.muted)
+                .fixedSize(horizontal: false, vertical: true)
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 10)
@@ -1492,7 +1504,7 @@ struct SafetyScoreExplanationView: View {
                 .background(SafetyScoreStyle.color(for: score), in: Circle())
 
             VStack(alignment: .leading, spacing: 3) {
-                Text("當前成分評級")
+                Text("安心度（法規／長期風險）")
                     .font(.caption.weight(.semibold))
                     .foregroundColor(Theme.muted)
 
@@ -1527,16 +1539,53 @@ struct SafetyScoreExplanationView: View {
         )
     }
 
+    private var irritationCard: some View {
+        HStack(alignment: .top, spacing: 12) {
+            Image(systemName: irritation.icon)
+                .font(.title3.weight(.semibold))
+                .foregroundColor(irritation.tint)
+                .frame(width: 40, height: 40)
+                .background(irritation.tint.opacity(0.14), in: Circle())
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text("刺激／致敏風險")
+                    .font(.caption.weight(.semibold))
+                    .foregroundColor(Theme.muted)
+
+                Text(irritation.rawValue)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundColor(irritation.tint)
+
+                Text(irritation.detail)
+                    .font(.caption)
+                    .foregroundColor(Theme.muted)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .padding(12)
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .stroke(Theme.cardStroke, lineWidth: 1)
+        )
+    }
+
     private var legendSection: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("燈號區間說明")
+            Text("安心度燈號（1–9）")
                 .font(.subheadline.weight(.semibold))
                 .foregroundColor(Theme.ink)
 
-            legendRow(score: 1, title: "綠點 (1-2)", detail: "低風險（刺激性低、致敏率低）")
-            legendRow(score: 4, title: "黃點 (3-6)", detail: "中度風險（視添加濃度與個人膚質耐受度而定）")
-            legendRow(score: 8, title: "紅點 (7-9)", detail: "高風險（刺激性較高、易致敏或具爭議性成分）")
+            legendRow(score: 1, title: "綠點 (1-2)", detail: "較安心：法規／長期風險相對較低")
+            legendRow(score: 4, title: "黃點 (3-6)", detail: "需留意：視濃度、用途與個人膚質")
+            legendRow(score: 8, title: "紅點 (7-9)", detail: "需特別留意：禁／限用或長期風險較高")
             legendRow(score: nil, title: "灰點 (-)", detail: "暫無評級資料")
+
+            Text("刺激風險另標，不與上方分數混用。")
+                .font(.caption2)
+                .foregroundColor(Theme.muted)
+                .padding(.top, 2)
         }
     }
 

@@ -20,11 +20,14 @@ struct DictionaryView: View {
     @Query(sort: \FavoriteIngredientRecord.createdAt, order: .reverse)
     private var favoriteIngredientRecords: [FavoriteIngredientRecord]
 
-    @State private var allItems: [IngredientItem] = []
     @State private var commonItems: [IngredientItem] = []
+    @State private var ingredientCount = 0
     @State private var searchText = ""
+    @State private var searchResults: [IngredientItem] = []
     @State private var isLoading = true
+    @State private var isSearchingDictionary = false
     @State private var showPaywall = false
+    @State private var searchTask: Task<Void, Never>?
 
     private var favoritedIngredientKeys: Set<String> {
         FavoriteManager.favoritedIngredientKeys(from: favoriteIngredientRecords)
@@ -35,11 +38,6 @@ struct DictionaryView: View {
     }
 
     private var isSearching: Bool { !query.isEmpty }
-
-    private var searchResults: [IngredientItem] {
-        guard Self.isSearchReady(query) else { return [] }
-        return Array(Self.search(in: allItems, query: query).prefix(Self.maxDisplayedResults))
-    }
 
     private var recentItems: [IngredientItem] {
         var seen = Set<String>()
@@ -88,13 +86,19 @@ struct DictionaryView: View {
             .searchable(
                 text: $searchText,
                 placement: .navigationBarDrawer(displayMode: .always),
-                prompt: "請搜尋成分名稱"
+                prompt: "搜尋中文名、英文 INCI 或別名"
             )
+            .onChange(of: searchText) { _, newValue in
+                scheduleSearch(newValue)
+            }
             .task {
                 await loadDictionary()
             }
             .sheet(isPresented: $showPaywall) {
                 PaywallView(reason: .favorites)
+            }
+            .onDisappear {
+                searchTask?.cancel()
             }
         }
     }
@@ -107,6 +111,19 @@ struct DictionaryView: View {
                     .listRowInsets(EdgeInsets(top: 24, leading: 22, bottom: 24, trailing: 22))
                     .listRowSeparator(.hidden)
                     .listRowBackground(Color.clear)
+            }
+        } else if isSearchingDictionary && searchResults.isEmpty {
+            Section {
+                HStack(spacing: 10) {
+                    ProgressView()
+                    Text("搜尋中…")
+                        .font(.subheadline)
+                        .foregroundColor(Theme.muted)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .listRowInsets(EdgeInsets(top: 24, leading: 22, bottom: 24, trailing: 22))
+                .listRowSeparator(.hidden)
+                .listRowBackground(Color.clear)
             }
         } else if searchResults.isEmpty {
             Section {
@@ -166,7 +183,7 @@ struct DictionaryView: View {
 
     private func dictionaryLink(_ item: IngredientItem) -> some View {
         NavigationLink {
-            IngredientDetailView(ingredient: item.asDetailIngredient())
+            IngredientDetailView(ingredient: item.asDetailIngredient(), databaseItem: item)
         } label: {
             DictionaryIngredientRow(item: item)
         }
@@ -214,7 +231,7 @@ struct DictionaryView: View {
 
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("\(allItems.count) 筆")
+                    Text("\(ingredientCount) 筆")
                         .font(.title2.weight(.bold))
                         .foregroundColor(Theme.ink)
                     Text("已收錄，請用搜尋查找")
@@ -250,7 +267,7 @@ struct DictionaryView: View {
             Text("找不到「\(searchText)」")
                 .font(.subheadline.weight(.semibold))
                 .foregroundColor(Theme.ink)
-            Text("試試英文 INCI、中文名或常見別名。")
+            Text("可搜尋中文名（如甘油、菸鹼醯胺）、英文 INCI 或常見別名。")
                 .font(.caption)
                 .foregroundColor(Theme.muted)
         }
@@ -264,15 +281,41 @@ struct DictionaryView: View {
         let queries = Self.commonQueries
         let loaded = await Task.detached(priority: .userInitiated) {
             _ = IngredientDatabaseManager.shared.ensureLoaded()
-            let all = IngredientDatabaseManager.shared.allIngredients()
+            let count = IngredientDatabaseManager.shared.ingredientCount
             let common = queries.compactMap { name in
                 IngredientDatabaseManager.shared.lookup(ingredientName: name)
             }
-            return (all, common)
+            return (count, common)
         }.value
-        allItems = loaded.0
+        ingredientCount = loaded.0
         commonItems = loaded.1
         isLoading = false
+        scheduleSearch(searchText)
+    }
+
+    private func scheduleSearch(_ raw: String) {
+        searchTask?.cancel()
+        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard Self.isSearchReady(trimmed) else {
+            isSearchingDictionary = false
+            searchResults = []
+            return
+        }
+
+        isSearchingDictionary = true
+        let limit = Self.maxDisplayedResults
+        searchTask = Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 220_000_000)
+            guard !Task.isCancelled else { return }
+
+            let results = await Task.detached(priority: .userInitiated) {
+                IngredientDatabaseManager.shared.suggest(matching: trimmed, limit: limit)
+            }.value
+
+            guard !Task.isCancelled else { return }
+            searchResults = results
+            isSearchingDictionary = false
+        }
     }
 
     static var databaseVersionLabel: String {
@@ -291,37 +334,20 @@ struct DictionaryView: View {
         return trimmed.count >= 2
     }
 
-    /// 搜尋：原文包含 + 去標點緊湊包含；查詢端套用植萃縮寫與 CosIng 同義詞。
+    /// 單元測試用：在給定清單內做中英／別名包含比對（UI 改走 `suggest`）。
     static func search(in items: [IngredientItem], query: String) -> [IngredientItem] {
         let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
         guard isSearchReady(trimmed) else { return [] }
-
-        let expanded = IngredientMatcher.expandBotanicalAbbreviations(trimmed)
-        let normalized = IngredientMatcher.deepNormalize(expanded)
-        var needles: [String] = [
-            trimmed.lowercased(with: Locale(identifier: "en_US_POSIX")),
-            expanded.lowercased(with: Locale(identifier: "en_US_POSIX")),
-            normalized,
-        ]
-        let compactNeedles = needles.map(compactSearchKey).filter { $0.count >= 2 }
-        needles = Array(Set(needles.filter { !$0.isEmpty }))
-
+        let needle = trimmed.lowercased(with: Locale(identifier: "en_US_POSIX"))
+        let compactNeedle = IngredientDatabaseManager.normalizedKey(trimmed)
         return items.filter { item in
             item.allMatchNames.contains { name in
                 let lower = name.lowercased(with: Locale(identifier: "en_US_POSIX"))
-                if needles.contains(where: { lower.contains($0) }) { return true }
-                let compact = compactSearchKey(lower)
-                return compactNeedles.contains { compact.contains($0) }
+                if lower.contains(needle) { return true }
+                guard compactNeedle.count >= 1 else { return false }
+                return IngredientDatabaseManager.normalizedKey(name).contains(compactNeedle)
             }
         }
-    }
-
-    private static func compactSearchKey(_ text: String) -> String {
-        text.unicodeScalars
-            .filter { CharacterSet.alphanumerics.contains($0) }
-            .map { Character($0) }
-            .reduce(into: "") { $0.append($1) }
-            .lowercased(with: Locale(identifier: "en_US_POSIX"))
     }
 }
 
@@ -374,19 +400,18 @@ extension IngredientItem {
     func asDetailIngredient() -> Ingredient {
         let score = safetyScore ?? 5
         let clamped = min(max(score, 1), 9)
-        let band: EWGBand
+        let band = ConcernBand.from(score: clamped)
         let risk: RiskLevel
-        switch clamped {
-        case 1...2:
-            band = .safe
-            risk = .low
-        case 3...6:
-            band = .moderate
-            risk = .moderate
-        default:
-            band = .high
-            risk = .high
+        switch band {
+        case .low: risk = .low
+        case .moderate: risk = .moderate
+        case .high: risk = .high
         }
+        let irritation = IrritationRiskClassifier.evaluate(
+            englishName: englishName,
+            chineseName: chineseName,
+            databaseItem: self
+        )
 
         let functionTags = function
             .components(separatedBy: CharacterSet(charactersIn: "、，,/／|"))
@@ -419,12 +444,13 @@ extension IngredientItem {
             benefit: firstFunctionSegment ?? function,
             benefits: functionTags.isEmpty ? [function] : Array(functionTags.prefix(4)),
             summary: function.isEmpty ? "一般保養成份" : function,
-            safetyNote: "安心度評級 \(safetyRating.isEmpty ? "—" : safetyRating)（1–9，分數越低通常關注度越低）。",
+            safetyNote: "安心度 \(safetyRating.isEmpty ? "—" : safetyRating)/9（法規／長期風險彙整）；刺激風險：\(irritation.rawValue)。",
             suitableSkinTypes: ["一般膚質", "依產品配方與濃度而定"],
             cautionSkinTypes: ["敏感肌請先局部測試；實際耐受度因人而異"],
             warnings: aliasWarnings,
-            ewgScore: clamped,
-            ewgBand: band,
+            concernScore: clamped,
+            concernBand: band,
+            irritationRisk: irritation,
             risk: risk,
             accentRed: 0.55,
             accentGreen: 0.58,

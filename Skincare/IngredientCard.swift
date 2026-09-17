@@ -23,7 +23,10 @@ struct IngredientCard: View {
                             .foregroundStyle(Theme.muted)
                     }
                     Spacer(minLength: 8)
-                    EWGBadge(band: ingredient.ewgBand, compact: true)
+                    VStack(alignment: .trailing, spacing: 4) {
+                        ConcernBadge(band: ingredient.concernBand, compact: true)
+                        IrritationBadge(risk: ingredient.irritationRisk, compact: true)
+                    }
                 }
 
                 Text(ingredient.benefit)
@@ -51,8 +54,8 @@ struct IngredientCard: View {
     }
 }
 
-struct EWGBadge: View {
-    let band: EWGBand
+struct ConcernBadge: View {
+    let band: ConcernBand
     var compact: Bool = false
 
     var body: some View {
@@ -62,5 +65,19 @@ struct EWGBadge: View {
             .padding(.horizontal, compact ? 9 : 12)
             .padding(.vertical, compact ? 5 : 7)
             .background(band.tint.opacity(0.14), in: Capsule())
+    }
+}
+
+struct IrritationBadge: View {
+    let risk: IrritationRisk
+    var compact: Bool = false
+
+    var body: some View {
+        Label(risk.rawValue, systemImage: risk.icon)
+            .font(compact ? .caption2.weight(.semibold) : .caption.weight(.semibold))
+            .foregroundStyle(risk.tint)
+            .padding(.horizontal, compact ? 9 : 12)
+            .padding(.vertical, compact ? 5 : 7)
+            .background(risk.tint.opacity(0.14), in: Capsule())
     }
 }

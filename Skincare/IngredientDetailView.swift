@@ -1,7 +1,14 @@
+import SwiftData
 import SwiftUI
 
 struct IngredientDetailView: View {
     let ingredient: Ingredient
+    /// 字典／資料庫原文，供膚質引擎與掃描同一套規則比對。
+    var databaseItem: IngredientItem? = nil
+
+    @Query private var profiles: [UserProfile]
+
+    private var profile: UserProfile? { profiles.first }
 
     var body: some View {
         ZStack {
@@ -14,7 +21,7 @@ struct IngredientDetailView: View {
                     if let highlight = modernEUSunscreenHighlight {
                         modernEUSunscreenCard(highlight)
                     }
-                    ewgSection
+                    riskAxesSection
                     benefitsSection
                     skinAnalysisSection
                     warningsSection
@@ -26,6 +33,20 @@ struct IngredientDetailView: View {
         }
         .navigationTitle("成分詳情")
         .appDetailNavigationChrome()
+    }
+
+    /// 與掃描結果相同引擎：依個人檔案膚質／敏感設定產生標籤。
+    private var skinReport: SkinSuitabilityReport {
+        let db = databaseItem
+            ?? IngredientDatabaseManager.shared.lookup(ingredientName: ingredient.englishName)
+            ?? IngredientDatabaseManager.shared.lookup(ingredientName: ingredient.chineseName)
+        return SkinSuitabilityEngine.evaluate(
+            ingredients: [ingredient.englishName],
+            databaseItems: [db],
+            skinType: profile?.skinType ?? .combination,
+            isSensitiveSkin: profile?.isSensitiveSkin ?? false,
+            enabledAlertTags: Set(profile?.blockedTags ?? [])
+        )
     }
 
     private var modernEUSunscreenHighlight: ModernEUSunscreenHighlight.Info? {
@@ -98,26 +119,56 @@ struct IngredientDetailView: View {
         }
     }
 
-    private var ewgSection: some View {
+    private var riskAxesSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            sectionTitle("EWG 安全等級")
+            sectionTitle("安心度與刺激風險")
 
-            HStack(spacing: 14) {
-                EWGBadge(band: ingredient.ewgBand)
+            VStack(alignment: .leading, spacing: 14) {
+                HStack(spacing: 14) {
+                    ConcernBadge(band: ingredient.concernBand)
 
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("分數 \(ingredient.ewgScore) / 10")
-                        .font(.system(.title3, design: .serif).weight(.medium))
-                        .foregroundStyle(Theme.ink)
-                    Text("分數越低，資料庫中的關注度通常越低。非醫療建議。")
-                        .font(.caption)
-                        .foregroundStyle(Theme.muted)
-                    Link("EWG Skin Deep® 來源", destination: LegalLinks.ewgSkinDeep)
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(Theme.accent)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("安心度 \(ingredient.concernScore) / 9")
+                            .font(.system(.title3, design: .serif).weight(.medium))
+                            .foregroundStyle(Theme.ink)
+                        Text("分數越低通常越安心（偏法規／長期風險彙整）。屬本 App 整理，非第三方官網評分。")
+                            .font(.caption)
+                            .foregroundStyle(Theme.muted)
+                    }
+
+                    Spacer(minLength: 0)
                 }
 
-                Spacer(minLength: 0)
+                Divider()
+
+                HStack(spacing: 14) {
+                    IrritationBadge(risk: ingredient.irritationRisk)
+
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(ingredient.irritationRisk.rawValue)
+                            .font(.system(.title3, design: .serif).weight(.medium))
+                            .foregroundStyle(Theme.ink)
+                        Text(ingredient.irritationRisk.detail)
+                            .font(.caption)
+                            .foregroundStyle(Theme.muted)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+
+                    Spacer(minLength: 0)
+                }
+
+                Text("公開來源可查：台灣食藥署開放資料（禁／限用）與歐盟 CosIng。分數與標籤為本 App 整理，不完全等同原始資料庫欄位。")
+                    .font(.caption2)
+                    .foregroundStyle(Theme.muted)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                HStack(spacing: 14) {
+                    Link("台灣禁用品項", destination: LegalLinks.twCosmeticsBanned)
+                    Link("台灣限用品項", destination: LegalLinks.twCosmeticsRestricted)
+                    Link("EU CosIng", destination: LegalLinks.euCosIng)
+                }
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(Theme.accent)
             }
             .padding(16)
             .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
@@ -149,22 +200,61 @@ struct IngredientDetailView: View {
     }
 
     private var skinAnalysisSection: some View {
-        VStack(alignment: .leading, spacing: 14) {
+        let report = skinReport
+        let suitable = report.beneficialHits
+        let caution = report.cautionHits
+        let profileLabel = "\(report.skinType.rawValue)\(report.isSensitiveSkin ? "・敏感肌" : "")"
+
+        return VStack(alignment: .leading, spacing: 14) {
             sectionTitle("適合膚質分析")
 
-            VStack(alignment: .leading, spacing: 8) {
-                labelRow("較適合", systemImage: "checkmark.circle.fill", tint: Theme.sage)
-                FlowChips(items: ingredient.suitableSkinTypes, tint: Theme.sage)
-            }
+            Text("依您的膚質設定（\(profileLabel)），與掃描結果使用同一套規則。")
+                .font(.caption)
+                .foregroundStyle(Theme.muted)
+                .fixedSize(horizontal: false, vertical: true)
 
-            VStack(alignment: .leading, spacing: 8) {
-                labelRow("需放慢節奏", systemImage: "hand.raised.fill", tint: Theme.gold)
-                ForEach(ingredient.cautionSkinTypes, id: \.self) { note in
-                    Text(note)
-                        .font(.subheadline)
-                        .foregroundStyle(Theme.muted)
+            if !suitable.isEmpty {
+                VStack(alignment: .leading, spacing: 8) {
+                    labelRow("較適合／推薦", systemImage: "checkmark.circle.fill", tint: Theme.sage)
+                    FlowChips(
+                        items: Array(Set(suitable.map(\.flag.rawValue))).sorted(),
+                        tint: Theme.sage
+                    )
+                    ForEach(suitable, id: \.id) { hit in
+                        Text(hit.reason)
+                            .font(.subheadline)
+                            .foregroundStyle(Theme.muted)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
                 }
             }
+
+            if !caution.isEmpty {
+                VStack(alignment: .leading, spacing: 8) {
+                    labelRow("需留意", systemImage: "hand.raised.fill", tint: Theme.gold)
+                    FlowChips(
+                        items: Array(Set(caution.map(\.flag.rawValue))).sorted(),
+                        tint: Theme.gold
+                    )
+                    ForEach(caution, id: \.id) { hit in
+                        Text(hit.reason)
+                            .font(.subheadline)
+                            .foregroundStyle(Theme.muted)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+            }
+
+            if suitable.isEmpty && caution.isEmpty {
+                Text("依目前膚質設定，此成分未觸發特別推薦或警示標籤。實際仍視產品濃度、配方位置與個人耐受而定。")
+                    .font(.subheadline)
+                    .foregroundStyle(Theme.muted)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            Text("非醫療建議。可在「檔案」調整膚質與敏感肌設定。")
+                .font(.caption2)
+                .foregroundStyle(Theme.muted)
         }
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -258,5 +348,6 @@ struct IngredientDetailView_Previews: PreviewProvider {
         NavigationView {
             IngredientDetailView(ingredient: Ingredient.samples[1])
         }
+        .modelContainer(SkincareModelContainer.preview)
     }
 }

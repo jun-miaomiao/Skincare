@@ -40,7 +40,7 @@ struct DataSourcesDisclaimerView: View {
                 .font(.subheadline.weight(.semibold))
                 .foregroundColor(Theme.ink)
 
-            Text("安心度評級、膚質適配與風險提示為日常護膚參考用的資訊彙整，並非醫療診斷、治療建議或藥品／化粧品法規判定。選購與使用請以產品標示為準；有皮膚疾患或不適請諮詢專業醫療人員。")
+            Text("安心度、刺激風險、膚質適配與風險提示為日常護膚參考用的資訊彙整，並非醫療診斷、治療建議或藥品／化粧品法規判定。選購與使用請以產品標示與主管機關最新公告為準；有皮膚疾患或不適請諮詢專業醫療人員。")
                 .font(.caption)
                 .foregroundColor(Theme.muted)
                 .fixedSize(horizontal: false, vertical: true)
@@ -60,19 +60,24 @@ struct DataSourcesDisclaimerView: View {
                 .font(.system(.headline, design: .serif))
                 .foregroundColor(Theme.ink)
 
-            Text("成分安心度對照下列公開資料庫與國際化粧品成分資訊；本 App 分數為彙整參考，不完全等同任一第三方原始評分。")
+            Text("成分名稱與禁／限用資訊可對照下列公開資料；本 App 的安心度分數與刺激標籤為自行彙整，不完全等同任一原始資料庫欄位，亦非第三方商業評分商標。")
                 .font(.caption)
                 .foregroundColor(Theme.muted)
                 .fixedSize(horizontal: false, vertical: true)
 
             sourceLinkRow(
-                title: "EWG Skin Deep®",
-                subtitle: "成分危害關注度公開資料",
-                url: LegalLinks.ewgSkinDeep
+                title: "台灣・化粧品禁止使用成分",
+                subtitle: "政府資料開放平臺（食藥署）",
+                url: LegalLinks.twCosmeticsBanned
+            )
+            sourceLinkRow(
+                title: "台灣・化粧品成分使用限制",
+                subtitle: "政府資料開放平臺（食藥署）",
+                url: LegalLinks.twCosmeticsRestricted
             )
             sourceLinkRow(
                 title: "EU CosIng",
-                subtitle: "歐盟化粧品成分資料庫",
+                subtitle: "歐盟化粧品成分公開資料庫",
                 url: LegalLinks.euCosIng
             )
         }
