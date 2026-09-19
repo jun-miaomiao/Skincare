@@ -32,9 +32,9 @@ enum SubscriptionProductID: String, CaseIterable, Identifiable {
     /// 後備顯示價（StoreKit 尚未回傳時）。實際結帳以 App Store 為準。
     var fallbackPriceLabel: String {
         switch self {
-        case .monthly: return "NT$99／月"
-        case .yearly: return "NT$590／年"
-        case .lifetime: return "NT$1,490"
+        case .monthly: return "NT$60／月"
+        case .yearly: return "NT$490／年"
+        case .lifetime: return "NT$690"
         }
     }
 

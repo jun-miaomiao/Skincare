@@ -5,7 +5,7 @@
   ],
   "products" : [
     {
-      "displayPrice" : "1490",
+      "displayPrice" : "690",
       "familyShareable" : false,
       "internalID" : "AAAAAAAA-BBBB-CCCC-DDDD-EEEEEEEE0003",
       "localizations" : [
@@ -55,7 +55,7 @@
           "codeOffers" : [
 
           ],
-          "displayPrice" : "99",
+          "displayPrice" : "60",
           "familyShareable" : false,
           "groupNumber" : 1,
           "internalID" : "AAAAAAAA-BBBB-CCCC-DDDD-EEEEEEEE0001",
