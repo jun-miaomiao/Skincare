@@ -1598,7 +1598,8 @@ struct SafetyScoreExplanationView: View {
 
     private func isFriendlySkinReason(_ reason: String) -> Bool {
         if reason.contains("慎用") || reason.contains("注意") || reason.contains("致痘")
-            || reason.contains("粉刺") || reason.contains("刺激") {
+            || reason.contains("粉刺") || reason.contains("刺激") || reason.contains("孕")
+            || reason.contains("哺乳") {
             return false
         }
         let markers = [

@@ -6,6 +6,7 @@ enum SkinSuitabilityFlag: String, Hashable, Sendable, CaseIterable {
     case sensitiveCaution = "敏感慎用"
     case sensitiveNote = "敏弱注意"
     case irritationCaution = "刺激慎用"
+    case pregnancyCaution = "孕哺慎用"
     case comedogenicRisk = "致痘風險"
     case tZoneComedogenic = "T字易致粉刺"
 
@@ -38,6 +39,7 @@ enum SkinSuitabilityFlag: String, Hashable, Sendable, CaseIterable {
         case .sensitiveCaution: return "⚠️ 敏弱慎用"
         case .sensitiveNote: return "⚠️ 敏弱注意"
         case .irritationCaution: return "⚠️ 刺激慎用"
+        case .pregnancyCaution: return "⚠️ 孕哺慎用"
         case .comedogenicRisk: return "⚠️ 易致粉刺"
         case .tZoneComedogenic: return "⚠️ T字易致粉刺"
         case .oilyFriendly: return "🌿 油肌推薦"
@@ -63,7 +65,7 @@ enum SkinSuitabilityFlag: String, Hashable, Sendable, CaseIterable {
 
     var isCaution: Bool {
         switch self {
-        case .sensitiveCaution, .sensitiveNote, .irritationCaution, .comedogenicRisk, .tZoneComedogenic:
+        case .sensitiveCaution, .sensitiveNote, .irritationCaution, .pregnancyCaution, .comedogenicRisk, .tZoneComedogenic:
             return true
         default:
             return false
@@ -135,6 +137,10 @@ struct SkinSuitabilityReport: Sendable {
         hits.filter {
             $0.flag == .sensitiveCaution || $0.flag == .sensitiveNote || $0.flag == .irritationCaution
         }.count
+    }
+
+    var pregnancyCautionCount: Int {
+        hits.filter { $0.flag == .pregnancyCaution }.count
     }
 
     var comedogenicCount: Int {
@@ -211,6 +217,9 @@ struct SkinSuitabilityReport: Sendable {
             if !shouldSurfaceSkinCautionInSummary {
                 return "與混合肌適配良好"
             }
+            if pregnancyCautionCount > 0 {
+                return "含有 \(pregnancyCautionCount) 項孕哺期建議慎用成分"
+            }
             if sensitiveCautionCount > 0 {
                 return "含有 \(sensitiveCautionCount) 項敏弱肌需注意成分"
             }
@@ -226,6 +235,9 @@ struct SkinSuitabilityReport: Sendable {
             }
             return "與您的膚質高度契合"
         }
+        if pregnancyCautionCount > 0 {
+            return "含有 \(pregnancyCautionCount) 項孕哺期建議慎用成分"
+        }
         if sensitiveCautionCount > 0 {
             return "含有 \(sensitiveCautionCount) 項敏弱肌需注意成分"
         }
@@ -240,6 +252,9 @@ struct SkinSuitabilityReport: Sendable {
             return "依目前膚質設定（\(skinType.rawValue)\(isSensitiveSkin ? "・敏感肌" : "")），未偵測到需特別避開的成分。"
         }
         var parts: [String] = []
+        if pregnancyCautionCount > 0 {
+            parts.append("孕哺慎用 \(pregnancyCautionCount) 項")
+        }
         if sensitiveCautionCount > 0 {
             parts.append("敏弱慎用 \(sensitiveCautionCount) 項")
         }

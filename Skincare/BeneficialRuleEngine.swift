@@ -151,6 +151,15 @@ enum BeneficialRuleEngine {
     private static func appendVitaminA(context: Context, into results: inout [SkinSuitabilityHit]) {
         guard matches(context, keywords: vitaminAKeywords) else { return }
 
+        // 孕哺慎用：視黃醇／維 A 酸家族一律標示（與膚質推薦並存，不取代刺激警示）。
+        results.append(
+            makeHit(
+                context,
+                flag: .pregnancyCaution,
+                reason: "含維生素 A／視黃醇家族（含 A 醇、A 醛、視黃酸酯等）；孕婦與哺乳期建議避免使用或先諮詢醫師。"
+            )
+        )
+
         if context.isSensitiveSkin {
             results.append(
                 makeHit(
@@ -307,8 +316,10 @@ enum BeneficialRuleEngine {
     ]
 
     static let vitaminAKeywords: [String] = [
-        "retinol", "retinal", "retinaldehyde", "hydroxypinacolone retinoate",
-        "retinyl palmitate", "視黃醇", "視黃醛", "A醇", "A醛"
+        "retinol", "retinal", "retinaldehyde", "retinoic acid", "tretinoin", "adapalene",
+        "hydroxypinacolone retinoate", "retinyl",
+        "視黃醇", "視黃醛", "視黃酸", "維a酸", "維 a 酸", "維A酸",
+        "A醇", "A醛", "A酸"
     ]
 
     static let vitaminCKeywords: [String] = [

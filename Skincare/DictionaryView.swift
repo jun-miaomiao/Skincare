@@ -419,14 +419,16 @@ extension IngredientItem {
             .filter { !$0.isEmpty }
 
         let aliasWarnings: [String] = {
-            guard let aliases, !aliases.isEmpty else {
-                return ["此為本地成分字典摘要；完整臨床評估請另參考產品標示與醫師建議。"]
+            var lines: [String] = []
+            if Self.matchesRetinoidFamily(englishName: englishName, chineseName: chineseName, aliases: aliases) {
+                lines.append("孕婦與哺乳期建議避免使用維生素 A／視黃醇家族（含 A 醇、A 醛、視黃酸酯等），或先諮詢醫師。")
             }
-            let joined = aliases.prefix(4).joined(separator: "、")
-            return [
-                "常見別名：\(joined)",
-                "此為本地成分字典摘要；完整臨床評估請另參考產品標示與醫師建議。"
-            ]
+            if let aliases, !aliases.isEmpty {
+                let joined = aliases.prefix(4).joined(separator: "、")
+                lines.append("常見別名：\(joined)")
+            }
+            lines.append("此為本地成分字典摘要；完整評估請另參考產品標示與醫師建議。")
+            return lines
         }()
 
         let symbolSource = englishName
@@ -457,6 +459,17 @@ extension IngredientItem {
             accentBlue: 0.52,
             aliases: aliases
         )
+    }
+
+    private static func matchesRetinoidFamily(
+        englishName: String,
+        chineseName: String,
+        aliases: [String]?
+    ) -> Bool {
+        let blob = ([englishName, chineseName] + (aliases ?? []))
+            .joined(separator: " ")
+            .lowercased()
+        return BeneficialRuleEngine.vitaminAKeywords.contains { blob.contains($0.lowercased()) }
     }
 }
 
