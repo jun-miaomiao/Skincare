@@ -50,6 +50,38 @@ struct IngredientDetailListView: View {
         FavoriteManager.favoritedIngredientKeys(from: favoriteIngredientRecords)
     }
 
+    /// 本次清單與成分最愛交集項數（旁註用，不取代警示）。
+    private var favoriteIngredientMatchCount: Int {
+        let keys = favoritedIngredientKeys
+        guard !keys.isEmpty else { return 0 }
+        var seen = Set<String>()
+        var count = 0
+        for item in orderedItems {
+            let id: String
+            let en: String
+            if let db = item.databaseItem {
+                id = db.id
+                en = db.englishName
+            } else {
+                id = item.name
+                en = item.name
+            }
+            guard FavoriteManager.isIngredientFavorited(
+                ingredientID: id,
+                englishName: en,
+                favoritedKeys: keys
+            ) else { continue }
+            let token = en.trimmingCharacters(in: .whitespacesAndNewlines)
+                .lowercased(with: Locale(identifier: "en_US_POSIX"))
+            let fallback = id.trimmingCharacters(in: .whitespacesAndNewlines)
+                .lowercased(with: Locale(identifier: "en_US_POSIX"))
+            let key = token.isEmpty ? fallback : token
+            guard !key.isEmpty, seen.insert(key).inserted else { continue }
+            count += 1
+        }
+        return count
+    }
+
     private var alertReport: IngredientAlertReport { cachedAlertReport }
 
     private var blockedItems: [ScannedIngredientItem] { cachedBlockedItems }
@@ -253,6 +285,28 @@ struct IngredientDetailListView: View {
 
     private var ingredientList: some View {
         List {
+            if favoriteIngredientMatchCount > 0 {
+                Section {
+                    HStack(spacing: 10) {
+                        Image(systemName: "star.fill")
+                            .font(.subheadline)
+                            .foregroundColor(Theme.gold)
+                        Text("含 \(favoriteIngredientMatchCount) 項收藏成分")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundColor(Theme.ink)
+                        Spacer(minLength: 0)
+                    }
+                    .padding(.vertical, 6)
+                    .listRowInsets(EdgeInsets(top: 8, leading: 18, bottom: 4, trailing: 18))
+                    .listRowSeparator(.hidden)
+                    .listRowBackground(
+                        Theme.gold.opacity(0.12)
+                    )
+                    .deleteDisabled(true)
+                    .accessibilityLabel("含 \(favoriteIngredientMatchCount) 項收藏成分")
+                }
+            }
+
             if showsWeakRecognitionHint {
                 Section {
                     WeakRecognitionHintCard(
@@ -375,6 +429,7 @@ struct IngredientDetailListView: View {
             displayMode: displayMode,
             alertTags: alertReport.annotation(forName: item.name, databaseItem: item.databaseItem)?.tags ?? [],
             skinReasons: alertReport.annotation(forName: item.name, databaseItem: item.databaseItem)?.skinReasons ?? [],
+            isFavorited: isIngredientAlreadyFavorited(item),
             onUnmatchedTap: item.databaseItem == nil
                 ? { beginEdit(item) }
                 : nil
@@ -1060,6 +1115,7 @@ private struct IngredientDetailRow: View {
     let displayMode: IngredientRowDisplayMode
     var alertTags: [IngredientAlertTag] = []
     var skinReasons: [String] = []
+    var isFavorited: Bool = false
     var onUnmatchedTap: (() -> Void)? = nil
 
     @State private var showSafetyExplanation = false
@@ -1132,6 +1188,13 @@ private struct IngredientDetailRow: View {
                         .foregroundColor(isHighlightAlert ? Theme.blush : Theme.ink)
                         .lineLimit(1)
                         .truncationMode(.tail)
+
+                    if isFavorited {
+                        Image(systemName: "star.fill")
+                            .font(.system(size: 10, weight: .bold))
+                            .foregroundColor(Theme.gold)
+                            .accessibilityLabel("已加入最愛")
+                    }
 
                     if isHighlightAlert {
                         Image(systemName: "exclamationmark.triangle.fill")
@@ -1320,6 +1383,34 @@ struct SafetyScoreExplanationView: View {
     var aliases: [String] = []
     var databaseItem: IngredientItem? = nil
 
+    @Environment(\.modelContext) private var modelContext
+    @EnvironmentObject private var subscriptionStore: SubscriptionStore
+    @Query(sort: \FavoriteIngredientRecord.createdAt, order: .reverse)
+    private var favoriteIngredientRecords: [FavoriteIngredientRecord]
+    @State private var showPaywall = false
+
+    private var favoritedIngredientKeys: Set<String> {
+        FavoriteManager.favoritedIngredientKeys(from: favoriteIngredientRecords)
+    }
+
+    private var isFavorited: Bool {
+        if let databaseItem {
+            return FavoriteManager.isIngredientFavorited(databaseItem, favoritedKeys: favoritedIngredientKeys)
+        }
+        return FavoriteManager.isIngredientFavorited(
+            ingredientID: ingredientEnglishName,
+            englishName: ingredientEnglishName,
+            favoritedKeys: favoritedIngredientKeys
+        )
+    }
+
+    private var favoriteButtonSymbol: String {
+        if !subscriptionStore.isPremium, !isFavorited {
+            return "lock.fill"
+        }
+        return isFavorited ? "star.fill" : "star"
+    }
+
     private var irritation: IrritationRisk {
         IrritationRiskClassifier.evaluate(
             englishName: ingredientEnglishName,
@@ -1391,7 +1482,46 @@ struct SafetyScoreExplanationView: View {
             .background(Theme.background.ignoresSafeArea())
             .navigationTitle("評級說明")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        toggleFavorite()
+                    } label: {
+                        Image(systemName: favoriteButtonSymbol)
+                            .foregroundStyle(isFavorited ? Theme.gold : Theme.ink)
+                    }
+                    .accessibilityLabel(isFavorited ? "取消最愛" : "加入最愛")
+                }
+            }
+            .sheet(isPresented: $showPaywall) {
+                PaywallView(reason: .favorites)
+            }
         }
+    }
+
+    private func toggleFavorite() {
+        guard subscriptionStore.isPremium else {
+            showPaywall = true
+            return
+        }
+        if let databaseItem {
+            _ = FavoriteManager.toggleIngredientFavorite(
+                databaseItem,
+                favoritedKeys: favoritedIngredientKeys,
+                in: modelContext
+            )
+            return
+        }
+        let name = ingredientEnglishName.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !name.isEmpty else { return }
+        let zh = ingredientChineseName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        _ = FavoriteManager.toggleIngredientFavorite(
+            ingredientID: name.lowercased(with: Locale(identifier: "en_US_POSIX")),
+            chineseName: zh.isEmpty ? name : zh,
+            englishName: name,
+            favoritedKeys: favoritedIngredientKeys,
+            in: modelContext
+        )
     }
 
     private func modernEUSunscreenCard(_ info: ModernEUSunscreenHighlight.Info) -> some View {

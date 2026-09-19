@@ -127,6 +127,9 @@ struct ScanSummarySheet: View {
     @Query(sort: \FavoriteProductRecord.createdAt, order: .reverse)
     private var favoriteProducts: [FavoriteProductRecord]
 
+    @Query(sort: \FavoriteIngredientRecord.createdAt, order: .reverse)
+    private var favoriteIngredientRecords: [FavoriteIngredientRecord]
+
     @Query private var profileList: [UserProfile]
 
     @State private var customProductName: String = ""
@@ -144,6 +147,51 @@ struct ScanSummarySheet: View {
 
     private var alertReport: IngredientAlertReport { cachedAlertReport }
 
+    private var favoritedIngredientKeys: Set<String> {
+        FavoriteManager.favoritedIngredientKeys(from: favoriteIngredientRecords)
+    }
+
+    /// 本次掃描成分與「成分最愛」交集項數（不影響警示語意）。
+    private var favoriteIngredientMatchCount: Int {
+        let keys = favoritedIngredientKeys
+        guard !keys.isEmpty else { return 0 }
+
+        var seen = Set<String>()
+        var count = 0
+
+        func consider(ingredientID: String, englishName: String) {
+            guard FavoriteManager.isIngredientFavorited(
+                ingredientID: ingredientID,
+                englishName: englishName,
+                favoritedKeys: keys
+            ) else { return }
+            let token = englishName.trimmingCharacters(in: .whitespacesAndNewlines).lowercased(with: Locale(identifier: "en_US_POSIX"))
+            let fallback = ingredientID.trimmingCharacters(in: .whitespacesAndNewlines).lowercased(with: Locale(identifier: "en_US_POSIX"))
+            let key = token.isEmpty ? fallback : token
+            guard !key.isEmpty, seen.insert(key).inserted else { return }
+            count += 1
+        }
+
+        if !payload.resolvedIngredients.isEmpty {
+            for snap in payload.resolvedIngredients {
+                if let db = snap.databaseItem {
+                    consider(ingredientID: db.id, englishName: db.englishName)
+                } else {
+                    consider(ingredientID: snap.name, englishName: snap.name)
+                }
+            }
+        } else {
+            for name in payload.ingredients {
+                if let db = IngredientDatabaseManager.shared.lookup(ingredientName: name) {
+                    consider(ingredientID: db.id, englishName: db.englishName)
+                } else {
+                    consider(ingredientID: name, englishName: name)
+                }
+            }
+        }
+        return count
+    }
+
     private var showsFavoriteButton: Bool { !payload.isFromFavorites }
     private var usesExternalIngredientNavigation: Bool {
         payload.isFromFavorites && onViewIngredients != nil
@@ -158,6 +206,9 @@ struct ScanSummarySheet: View {
                     VStack(alignment: .leading, spacing: 16) {
                         sheetHeader
                         unifiedAlertSummaryBanner
+                        if favoriteIngredientMatchCount > 0 {
+                            favoriteIngredientsChip
+                        }
                         compactSummaryCard
                     }
                     .padding(.horizontal, 22)
@@ -344,6 +395,28 @@ struct ScanSummarySheet: View {
     private var unifiedAlertSummaryBanner: some View {
         let report = alertReport
         return alertSummaryBannerContent(report: report)
+    }
+
+    private var favoriteIngredientsChip: some View {
+        HStack(spacing: 12) {
+            Image(systemName: "star.fill")
+                .font(.title3)
+                .foregroundColor(Theme.gold)
+
+            Text("含 \(favoriteIngredientMatchCount) 項收藏成分")
+                .font(.subheadline.weight(.semibold))
+                .foregroundColor(Theme.ink)
+                .fixedSize(horizontal: false, vertical: true)
+
+            Spacer(minLength: 0)
+        }
+        .padding(14)
+        .background(Theme.gold.opacity(0.14), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .stroke(Theme.gold.opacity(0.40), lineWidth: 1)
+        )
+        .accessibilityLabel("含 \(favoriteIngredientMatchCount) 項收藏成分")
     }
 
     private func alertSummaryBannerContent(report: IngredientAlertReport) -> some View {

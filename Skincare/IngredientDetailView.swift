@@ -6,9 +6,35 @@ struct IngredientDetailView: View {
     /// 字典／資料庫原文，供膚質引擎與掃描同一套規則比對。
     var databaseItem: IngredientItem? = nil
 
+    @Environment(\.modelContext) private var modelContext
+    @EnvironmentObject private var subscriptionStore: SubscriptionStore
+    @Query(sort: \FavoriteIngredientRecord.createdAt, order: .reverse)
+    private var favoriteIngredientRecords: [FavoriteIngredientRecord]
     @Query private var profiles: [UserProfile]
+    @State private var showPaywall = false
 
     private var profile: UserProfile? { profiles.first }
+
+    private var favoritedIngredientKeys: Set<String> {
+        FavoriteManager.favoritedIngredientKeys(from: favoriteIngredientRecords)
+    }
+
+    private var resolvedDatabaseItem: IngredientItem? {
+        databaseItem
+            ?? IngredientDatabaseManager.shared.lookup(ingredientName: ingredient.englishName)
+            ?? IngredientDatabaseManager.shared.lookup(ingredientName: ingredient.chineseName)
+    }
+
+    private var isFavorited: Bool {
+        if let db = resolvedDatabaseItem {
+            return FavoriteManager.isIngredientFavorited(db, favoritedKeys: favoritedIngredientKeys)
+        }
+        return FavoriteManager.isIngredientFavorited(
+            ingredientID: ingredient.id,
+            englishName: ingredient.englishName,
+            favoritedKeys: favoritedIngredientKeys
+        )
+    }
 
     var body: some View {
         ZStack {
@@ -33,13 +59,54 @@ struct IngredientDetailView: View {
         }
         .navigationTitle("成分詳情")
         .appDetailNavigationChrome()
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button {
+                    toggleFavorite()
+                } label: {
+                    Image(systemName: favoriteButtonSymbol)
+                        .foregroundStyle(isFavorited ? Theme.gold : Theme.ink)
+                }
+                .accessibilityLabel(isFavorited ? "取消最愛" : "加入最愛")
+            }
+        }
+        .sheet(isPresented: $showPaywall) {
+            PaywallView(reason: .favorites)
+        }
+    }
+
+    private var favoriteButtonSymbol: String {
+        if !subscriptionStore.isPremium, !isFavorited {
+            return "lock.fill"
+        }
+        return isFavorited ? "star.fill" : "star"
+    }
+
+    private func toggleFavorite() {
+        guard subscriptionStore.isPremium else {
+            showPaywall = true
+            return
+        }
+        if let db = resolvedDatabaseItem {
+            _ = FavoriteManager.toggleIngredientFavorite(
+                db,
+                favoritedKeys: favoritedIngredientKeys,
+                in: modelContext
+            )
+            return
+        }
+        _ = FavoriteManager.toggleIngredientFavorite(
+            ingredientID: ingredient.id,
+            chineseName: ingredient.chineseName,
+            englishName: ingredient.englishName,
+            favoritedKeys: favoritedIngredientKeys,
+            in: modelContext
+        )
     }
 
     /// 與掃描結果相同引擎：依個人檔案膚質／敏感設定產生標籤。
     private var skinReport: SkinSuitabilityReport {
-        let db = databaseItem
-            ?? IngredientDatabaseManager.shared.lookup(ingredientName: ingredient.englishName)
-            ?? IngredientDatabaseManager.shared.lookup(ingredientName: ingredient.chineseName)
+        let db = resolvedDatabaseItem
         return SkinSuitabilityEngine.evaluate(
             ingredients: [ingredient.englishName],
             databaseItems: [db],
@@ -349,5 +416,6 @@ struct IngredientDetailView_Previews: PreviewProvider {
             IngredientDetailView(ingredient: Ingredient.samples[1])
         }
         .modelContainer(SkincareModelContainer.preview)
+        .environmentObject(SubscriptionStore.shared)
     }
 }

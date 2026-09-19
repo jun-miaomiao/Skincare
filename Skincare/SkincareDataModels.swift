@@ -613,6 +613,83 @@ enum FavoriteManager {
         return true
     }
 
+    @MainActor
+    @discardableResult
+    static func removeIngredient(
+        ingredientID: String = "",
+        englishName: String = "",
+        in context: ModelContext
+    ) -> Bool {
+        let idKey = normalizeIngredientKey(ingredientID)
+        let enKey = normalizeIngredientKey(englishName)
+        guard !idKey.isEmpty || !enKey.isEmpty else { return false }
+        guard let all = try? context.fetch(FetchDescriptor<FavoriteIngredientRecord>()) else { return false }
+
+        let matches = all.filter { record in
+            let rid = normalizeIngredientKey(record.ingredientID)
+            let ren = normalizeIngredientKey(record.englishName)
+            if !idKey.isEmpty, rid == idKey { return true }
+            if !enKey.isEmpty, (ren == enKey || rid == enKey) { return true }
+            if !idKey.isEmpty, ren == idKey { return true }
+            return false
+        }
+        guard !matches.isEmpty else { return false }
+        for match in matches {
+            context.delete(match)
+        }
+        try? context.save()
+        return true
+    }
+
+    @MainActor
+    @discardableResult
+    static func removeIngredient(_ item: IngredientItem, in context: ModelContext) -> Bool {
+        removeIngredient(ingredientID: item.id, englishName: item.englishName, in: context)
+    }
+
+    /// 回傳操作後是否為「已收藏」。
+    @MainActor
+    @discardableResult
+    static func toggleIngredientFavorite(
+        ingredientID: String,
+        chineseName: String,
+        englishName: String,
+        favoritedKeys: Set<String>,
+        in context: ModelContext
+    ) -> Bool {
+        if isIngredientFavorited(
+            ingredientID: ingredientID,
+            englishName: englishName,
+            favoritedKeys: favoritedKeys
+        ) {
+            _ = removeIngredient(ingredientID: ingredientID, englishName: englishName, in: context)
+            return false
+        }
+        _ = addIngredient(
+            ingredientID: ingredientID,
+            chineseName: chineseName,
+            englishName: englishName,
+            in: context
+        )
+        return true
+    }
+
+    @MainActor
+    @discardableResult
+    static func toggleIngredientFavorite(
+        _ item: IngredientItem,
+        favoritedKeys: Set<String>,
+        in context: ModelContext
+    ) -> Bool {
+        toggleIngredientFavorite(
+            ingredientID: item.id,
+            chineseName: item.chineseName,
+            englishName: item.englishName,
+            favoritedKeys: favoritedKeys,
+            in: context
+        )
+    }
+
     static func triggerFavoriteHaptic() {
         #if canImport(UIKit)
         UIImpactFeedbackGenerator(style: .medium).impactOccurred()
