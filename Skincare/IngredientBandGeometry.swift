@@ -3,14 +3,14 @@ import SwiftUI
 
 /// 相機取景框幾何：畫面框與拍照裁切共用，避免「框內是成分、OCR 卻吃整張圖」。
 enum IngredientBandGeometry {
-    static let widthRatio: CGFloat = 0.82
-    static let maxFrameWidth: CGFloat = 340
-    static let heightOverWidth: CGFloat = 0.62
+    static let widthRatio: CGFloat = 0.90
+    static let maxFrameWidth: CGFloat = 380
+    static let heightOverWidth: CGFloat = 1.05
     static let bottomPaddingRatio: CGFloat = 0.08
     static let minBottomPadding: CGFloat = 36
-    /// OCR 裁切比白框更高更寬：視覺框只負責對焦，辨識要多吃上下密排成分。
-    static let cropPaddingRatioX: CGFloat = 0.12
-    static let cropPaddingRatioY: CGFloat = 0.42
+    /// 白框已蓋住整段成分，裁切只略為外擴，避免貼邊切字。
+    static let cropPaddingRatioX: CGFloat = 0.06
+    static let cropPaddingRatioY: CGFloat = 0.08
 
     static func bottomPadding(forHeight height: CGFloat) -> CGFloat {
         max(height * bottomPaddingRatio, minBottomPadding)
@@ -66,21 +66,10 @@ enum IngredientBandGeometry {
             dx: -mapped.width * cropPaddingRatioX,
             dy: -mapped.height * cropPaddingRatioY
         )
-        var clipped = padded.intersection(imageBounds)
+        let clipped = padded.intersection(imageBounds)
         guard clipped.width >= imageSize.width * 0.2,
-              clipped.height >= imageSize.height * 0.10 else {
+              clipped.height >= imageSize.height * 0.12 else {
             return fallbackCenterBand(in: imageSize)
-        }
-        // 預覽 16:9、照片 4:3 時對不準，至少給足夠高的橫帶，避免只吃到空白。
-        let minHeight = imageSize.height * 0.58
-        if clipped.height < minHeight {
-            let extra = (minHeight - clipped.height) / 2
-            clipped = CGRect(
-                x: clipped.minX,
-                y: max(0, clipped.minY - extra),
-                width: clipped.width,
-                height: min(minHeight, imageSize.height)
-            ).intersection(imageBounds)
         }
         return clipped
     }

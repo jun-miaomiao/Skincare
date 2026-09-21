@@ -61,6 +61,8 @@ class OCRManager {
             request.recognitionLevel = .accurate
             request.usesLanguageCorrection = false
             request.recognitionLanguages = ["en-US", "zh-Hant", "ja-JP", "ko-KR"]
+            // 密排 INCI 單行往往矮於預設 1/32，不降低會整行被丟掉。
+            request.minimumTextHeight = 0.012
 
             let handler = VNImageRequestHandler(cgImage: cgImageForOCR, options: [:])
             do {
@@ -69,7 +71,11 @@ class OCRManager {
                 return OCRRecognitionResult(lines: [])
             }
 
-            let observations = request.results ?? []
+            let observations = (request.results ?? []).sorted { lhs, rhs in
+                let dy = lhs.boundingBox.midY - rhs.boundingBox.midY
+                if abs(dy) > 0.012 { return dy > 0 }
+                return lhs.boundingBox.minX < rhs.boundingBox.minX
+            }
             let lines: [OCRLineResult] = observations.compactMap { observation in
                 guard let candidate = observation.topCandidates(1).first else { return nil }
                 return OCRLineResult(text: candidate.string, confidence: candidate.confidence)

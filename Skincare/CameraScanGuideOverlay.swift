@@ -46,7 +46,7 @@ struct CameraScanGuideOverlay: View {
                 .padding(.horizontal, 10)
                 .padding(.vertical, 5)
                 .background(Color.black.opacity(0.45), in: Capsule())
-                .position(x: rect.midX, y: rect.maxY - 18)
+                .position(x: rect.midX, y: max(rect.minY - 22, 36))
             }
             .preference(key: CameraPreviewSizeKey.self, value: geo.size)
         }

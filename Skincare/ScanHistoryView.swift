@@ -265,6 +265,7 @@ struct ScanHistoryView: View {
                             } label: {
                                 Label("刪除", systemImage: "trash")
                             }
+                            .tint(.red)
                         }
                     }
                 }

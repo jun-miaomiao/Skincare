@@ -64,82 +64,85 @@ struct PhotoLibraryFrameAlignView: View {
     @StateObject private var cropper = FrameAlignCropController()
 
     var body: some View {
-        ZStack {
-            Color.black.ignoresSafeArea()
+        GeometryReader { proxy in
+            let topInset = proxy.safeAreaInsets.top
+            let bottomInset = proxy.safeAreaInsets.bottom
+            ZStack {
+                Color.black.ignoresSafeArea()
 
-            FrameAlignScrollRepresentable(image: image, controller: cropper)
+                FrameAlignScrollRepresentable(image: image, controller: cropper)
+                    .ignoresSafeArea()
+
+                GeometryReader { geo in
+                    let size = geo.size
+                    let rect = IngredientBandGeometry.overlayRect(in: size)
+                    ZStack {
+                        dimmedMask(in: size, hole: rect)
+
+                        IngredientBandCornerFrame()
+                            .stroke(Color.white.opacity(0.92), style: StrokeStyle(lineWidth: 3, lineCap: .square))
+                            .frame(width: rect.width, height: rect.height)
+                            .position(x: rect.midX, y: rect.midY)
+
+                        Text("請將全成分對準白框（可雙指縮放、拖曳）")
+                            .font(.caption.weight(.semibold))
+                            .foregroundColor(.white)
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 5)
+                            .background(Color.black.opacity(0.45), in: Capsule())
+                            .position(x: rect.midX, y: max(rect.minY - 22, topInset + 52))
+                    }
+                    .onAppear { hostSize = size }
+                    .onChange(of: size) { _, newSize in
+                        hostSize = newSize
+                    }
+                }
+                .allowsHitTesting(false)
                 .ignoresSafeArea()
 
-            GeometryReader { geo in
-                let size = geo.size
-                let rect = IngredientBandGeometry.overlayRect(in: size)
-                ZStack {
-                    dimmedMask(in: size, hole: rect)
+                VStack(spacing: 0) {
+                    HStack {
+                        Button("取消", action: onCancel)
+                            .font(.body.weight(.semibold))
+                            .foregroundColor(.white)
+                            .padding(.horizontal, 18)
+                            .padding(.vertical, 12)
+                            .contentShape(Rectangle())
 
-                    IngredientBandCornerFrame()
-                        .stroke(Color.white.opacity(0.92), style: StrokeStyle(lineWidth: 3, lineCap: .square))
-                        .frame(width: rect.width, height: rect.height)
-                        .position(x: rect.midX, y: rect.midY)
+                        Spacer(minLength: 0)
+                            .allowsHitTesting(false)
 
-                    Text("請將全成分對準白框（可雙指縮放、拖曳）")
-                        .font(.caption.weight(.semibold))
-                        .foregroundColor(.white)
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 5)
-                        .background(Color.black.opacity(0.45), in: Capsule())
-                        // 放在白框上方，避免蓋住成分字影響對焦判斷。
-                        .position(x: rect.midX, y: max(rect.minY - 22, 28))
-                }
-                .onAppear { hostSize = size }
-                .onChange(of: size) { _, newSize in
-                    hostSize = newSize
-                }
-            }
-            .allowsHitTesting(false)
-            .ignoresSafeArea()
-
-            VStack(spacing: 0) {
-                HStack {
-                    Button("取消", action: onCancel)
-                        .font(.body.weight(.semibold))
-                        .foregroundColor(.white)
-                        .padding(.horizontal, 18)
-                        .padding(.vertical, 12)
-                        .contentShape(Rectangle())
+                        if let stepLabel {
+                            Text(stepLabel)
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundColor(.white)
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 6)
+                                .background(Color.black.opacity(0.45), in: Capsule())
+                                .padding(.trailing, 16)
+                        }
+                    }
+                    .padding(.top, topInset + 6)
 
                     Spacer(minLength: 0)
                         .allowsHitTesting(false)
 
-                    if let stepLabel {
-                        Text(stepLabel)
-                            .font(.subheadline.weight(.semibold))
+                    Button {
+                        confirmCrop()
+                    } label: {
+                        Text("開始辨識")
+                            .font(.headline.weight(.semibold))
                             .foregroundColor(.white)
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 6)
-                            .background(Color.black.opacity(0.45), in: Capsule())
-                            .padding(.trailing, 16)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 16)
+                            .background(Theme.accent, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
                     }
+                    .buttonStyle(.plain)
+                    .padding(.horizontal, 22)
+                    .padding(.bottom, bottomInset + 16)
                 }
-                .padding(.top, 8)
-
-                Spacer(minLength: 0)
-                    .allowsHitTesting(false)
-
-                Button {
-                    confirmCrop()
-                } label: {
-                    Text("開始辨識")
-                        .font(.headline.weight(.semibold))
-                        .foregroundColor(.white)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 16)
-                        .background(Theme.accent, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-                }
-                .buttonStyle(.plain)
-                .padding(.horizontal, 22)
-                .padding(.bottom, 28)
             }
-            .safeAreaPadding(.top, 4)
+            .ignoresSafeArea()
         }
     }
 

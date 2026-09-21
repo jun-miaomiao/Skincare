@@ -993,6 +993,7 @@ private struct FavoriteProductsPage: View {
                                     } label: {
                                         Label("刪除", systemImage: "trash")
                                     }
+                                    .tint(.red)
                                 }
                             }
                         }
@@ -1115,6 +1116,7 @@ private struct FavoriteIngredientsPage: View {
                                         } label: {
                                             Label("刪除", systemImage: "trash")
                                         }
+                                        .tint(.red)
                                     }
                                 }
                             }
