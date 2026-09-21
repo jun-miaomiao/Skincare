@@ -23,6 +23,31 @@ struct IngredientItem: Codable, Hashable, Identifiable, Sendable {
         self.aliases = aliases
     }
 
+    /// 合併搜尋用別名（去重、保留原順序）。
+    func mergingAliases(_ extras: [String]) -> IngredientItem {
+        var seen = Set((aliases ?? []).map { $0.lowercased(with: Locale(identifier: "en_US_POSIX")) })
+        let zhKey = chineseName.lowercased(with: Locale(identifier: "en_US_POSIX"))
+        seen.insert(zhKey)
+        var merged = aliases ?? []
+        for raw in extras {
+            let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !trimmed.isEmpty else { continue }
+            let key = trimmed.lowercased(with: Locale(identifier: "en_US_POSIX"))
+            guard !seen.contains(key) else { continue }
+            // 已完整寫在中文主名裡的不再重複掛別名。
+            if zhKey.contains(key) { continue }
+            seen.insert(key)
+            merged.append(trimmed)
+        }
+        return IngredientItem(
+            englishName: englishName,
+            chineseName: chineseName,
+            safetyRating: safetyRating,
+            function: function,
+            aliases: merged.isEmpty ? aliases : merged
+        )
+    }
+
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         englishName = try c.decodeIfPresent(String.self, forKey: .englishName)
@@ -578,7 +603,7 @@ final class IngredientDatabaseManager: @unchecked Sendable {
     static let shared = IngredientDatabaseManager()
 
     /// 隨 `IngredientsDatabase.json` 內容更新而遞增（App 更新後強制重載）。
-    static let bundledDatabaseVersion = 14
+    static let bundledDatabaseVersion = 15
     static let databaseVersionKey = "databaseVersion"
     static let databaseContentHashKey = "skincare.ingredientDatabaseContentHash"
 
@@ -642,8 +667,9 @@ final class IngredientDatabaseManager: @unchecked Sendable {
             let data = try Data(contentsOf: url)
             let decoded = try JSONDecoder().decode([IngredientItem].self, from: data)
             let hash = Self.contentHash(of: data)
-            items = decoded
-            let dicts = Self.buildLookupDicts(from: decoded)
+            let merged = Self.mergingTraditionalChineseSearchAliases(decoded)
+            items = merged
+            let dicts = Self.buildLookupDicts(from: merged)
             lookupDict = dicts.exact
             aliasLookupDict = dicts.aliases
             lookupIndex = dicts.lookupIndex
@@ -1016,6 +1042,64 @@ final class IngredientDatabaseManager: @unchecked Sendable {
             .filter { CharacterSet.alphanumerics.contains($0) }
             .map { Character($0) }
             .reduce(into: "") { $0.append($1) }
+    }
+
+    /// 常見成分的繁中搜尋別名（不含簡體）。掛進 `aliases`，字典／掃描查詢都能用。
+    private static let traditionalChineseSearchAliases: [String: [String]] = [
+        "niacinamide": ["維他命B3", "維生素B3", "菸鹼醯胺"],
+        "retinol": ["A醇", "維他命A", "維生素A", "視黃醇"],
+        "retinal": ["A醛", "視黃醛"],
+        "retinylpalmitate": ["維他命A棕櫚酸酯", "視黃醇棕櫚酸酯"],
+        "ascorbicacid": ["維他命C", "維生素C", "左旋C", "抗壞血酸"],
+        "glycerin": ["丙三醇", "甘油"],
+        "hyaluronicacid": ["玻尿酸", "透明質酸"],
+        "sodiumhyaluronate": ["玻尿酸鈉", "透明質酸鈉", "玻尿酸"],
+        "squalane": ["角鯊烷", "鯊烷"],
+        "squalene": ["角鯊烯"],
+        "salicylicacid": ["水楊酸", "BHA"],
+        "centellaasiaticaextract": ["積雪草", "雷公根", "CICA"],
+        "madecassoside": ["羥基積雪草苷", "積雪草"],
+        "asiaticoside": ["積雪草苷", "積雪草"],
+        "ceramidenp": ["神經醯胺", "神經醯胺NP"],
+        "ceramideap": ["神經醯胺", "神經醯胺AP"],
+        "ceramideeop": ["神經醯胺", "神經醯胺EOP"],
+        "ceramidens": ["神經醯胺", "神經醯胺NS"],
+        "panthenol": ["維他命B5", "維生素B5", "泛醇"],
+        "tocopherol": ["維他命E", "維生素E", "生育酚"],
+        "dimethicone": ["矽靈", "聚二甲基矽氧烷"],
+        "butyleneglycol": ["丁二醇", "BG"],
+        "propyleneglycol": ["丙二醇", "PG"],
+        "phenoxyethanol": ["苯氧乙醇"],
+        "tranexamicacid": ["傳明酸", "氨甲環酸"],
+        "azelaicacid": ["壬二酸", "杜鵑花酸"],
+        "glycolicacid": ["甘醇酸", "果酸", "AHA"],
+        "lacticacid": ["乳酸", "AHA"],
+        "mandelicacid": ["杏仁酸"],
+        "bakuchiol": ["補骨脂酚", "植物A醇"],
+        "ectoin": ["依克多因"],
+        "arbutin": ["熊果苷", "熊果素"],
+        "kojicacid": ["曲酸", "麴酸"],
+        "allantoin": ["尿囊素"],
+        "betaine": ["甜菜鹼"],
+        "urea": ["尿素"],
+        "collagen": ["膠原蛋白"],
+        "adenosine": ["腺苷"],
+        "caffeine": ["咖啡因"],
+        "zincoxide": ["氧化鋅", "鋅白"],
+        "titaniumdioxide": ["二氧化鈦", "鈦白"],
+        "camelliasinensisleafextract": ["綠茶萃取", "茶葉萃取", "綠茶"],
+        "aloebarbadensisleafjuice": ["蘆薈汁", "蘆薈"],
+        "butyrospermumparkiibutter": ["乳木果脂", "乳油木果脂"],
+        "cholesterol": ["膽固醇"]
+    ]
+
+    /// 把繁中搜尋別名併入列，再建索引（不改 JSON 檔）。
+    private static func mergingTraditionalChineseSearchAliases(_ items: [IngredientItem]) -> [IngredientItem] {
+        items.map { item in
+            let key = normalizedKey(item.englishName).lowercased(with: Locale(identifier: "en_US_POSIX"))
+            guard let extras = traditionalChineseSearchAliases[key] else { return item }
+            return item.mergingAliases(extras)
+        }
     }
 
     /// O(1) 查詢：精確 → 去標點 → 正規化（全詞，不拆 `/`）。
@@ -1709,12 +1793,13 @@ final class IngredientDatabaseManager: @unchecked Sendable {
 
     /// 手動新增／編輯用的即時建議：比對英文名、中文名與別名（不區分大小寫）。
     /// 完全相符優先於前綴，前綴優先於包含；同層較短名稱（本尊）排在較長衍生物前面。
+    /// 查詢會先套 OCR 字形修正與 `inciSynonymMap`（如 glycern → glycerin），與掃標籤救援一致。
     func suggest(matching query: String, limit: Int = 8) -> [IngredientItem] {
         ensureLoaded()
         let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty, limit > 0 else { return [] }
 
-        let needle = trimmed.lowercased(with: Locale(identifier: "en_US_POSIX"))
+        let needleVariants = Self.suggestNeedleVariants(from: trimmed)
         lock.lock()
         let snapshot = items
         lock.unlock()
@@ -1733,12 +1818,14 @@ final class IngredientDatabaseManager: @unchecked Sendable {
             func consider(_ text: String, exactRank: Int, prefixRank: Int, containsRank: Int) {
                 let key = text.lowercased(with: Locale(identifier: "en_US_POSIX"))
                 guard !key.isEmpty else { return }
-                if key == needle {
-                    bestRank = min(bestRank ?? exactRank, exactRank)
-                } else if key.hasPrefix(needle) {
-                    bestRank = min(bestRank ?? prefixRank, prefixRank)
-                } else if key.contains(needle) {
-                    bestRank = min(bestRank ?? containsRank, containsRank)
+                for needle in needleVariants {
+                    if key == needle {
+                        bestRank = min(bestRank ?? exactRank, exactRank)
+                    } else if key.hasPrefix(needle) {
+                        bestRank = min(bestRank ?? prefixRank, prefixRank)
+                    } else if needle.count >= 2, key.contains(needle) {
+                        bestRank = min(bestRank ?? containsRank, containsRank)
+                    }
                 }
             }
 
@@ -1750,22 +1837,29 @@ final class IngredientDatabaseManager: @unchecked Sendable {
             }
 
             // 去空白／標點後再比對一次，讓「菸鹼酰胺」與括號註記較容易命中。
-            let compactNeedle = Self.normalizedKey(needle)
-            if compactNeedle.count >= 1 {
+            let compactNeedles = needleVariants
+                .map { Self.normalizedKey($0) }
+                .filter { !$0.isEmpty }
+            if !compactNeedles.isEmpty {
                 func considerCompact(_ text: String, exactRank: Int, prefixRank: Int, containsRank: Int) {
                     let key = Self.normalizedKey(text)
                     guard !key.isEmpty else { return }
-                    if key == compactNeedle {
-                        bestRank = min(bestRank ?? exactRank, exactRank)
-                    } else if key.hasPrefix(compactNeedle) {
-                        bestRank = min(bestRank ?? prefixRank, prefixRank)
-                    } else if key.contains(compactNeedle) {
-                        bestRank = min(bestRank ?? containsRank, containsRank)
+                    for compactNeedle in compactNeedles {
+                        if key == compactNeedle {
+                            bestRank = min(bestRank ?? exactRank, exactRank)
+                        } else if key.hasPrefix(compactNeedle) {
+                            bestRank = min(bestRank ?? prefixRank, prefixRank)
+                        } else if compactNeedle.count >= 2, key.contains(compactNeedle) {
+                            bestRank = min(bestRank ?? containsRank, containsRank)
+                        }
                     }
                 }
                 considerCompact(item.englishName, exactRank: 3, prefixRank: 13, containsRank: 23)
                 considerCompact(item.chineseName, exactRank: 4, prefixRank: 14, containsRank: 24)
                 considerCompact(item.displayChineseName, exactRank: 4, prefixRank: 14, containsRank: 24)
+                for alias in item.aliases ?? [] {
+                    considerCompact(alias, exactRank: 5, prefixRank: 15, containsRank: 25)
+                }
             }
 
             if let bestRank {
@@ -1781,5 +1875,25 @@ final class IngredientDatabaseManager: @unchecked Sendable {
             return lhs.item.englishName.localizedCaseInsensitiveCompare(rhs.item.englishName) == .orderedAscending
         }
         return Array(scored.prefix(limit).map(\.item))
+    }
+
+    /// 原始查詢＋字形修正＋ INCI 同義詞展開（去重、保序）。
+    private static func suggestNeedleVariants(from trimmed: String) -> [String] {
+        let locale = Locale(identifier: "en_US_POSIX")
+        var variants: [String] = []
+        func append(_ raw: String) {
+            let value = raw
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+                .lowercased(with: locale)
+            guard !value.isEmpty, !variants.contains(value) else { return }
+            variants.append(value)
+        }
+
+        append(trimmed)
+        let glyphFixed = IngredientParser.replaceCommonOCRCharacters(in: trimmed)
+        append(glyphFixed)
+        append(IngredientMatcher.applyINCISynonyms(glyphFixed))
+        append(IngredientMatcher.applyINCISynonyms(trimmed))
+        return variants
     }
 }

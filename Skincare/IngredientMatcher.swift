@@ -99,7 +99,16 @@ enum IngredientMatcher {
             ("vit b3", "niacinamide"),
             ("vit. b3", "niacinamide"),
             ("3-pyridinecarboxamide", "niacinamide"),
+            // 常見 OCR 漏字／近形（僅精確別名，不放寬模糊門檻）
+            ("niacinamid", "niacinamide"),
+            ("niaclnamide", "niacinamide"),
+            ("niaclnamid", "niacinamide"),
             ("glycerol", "glycerin"),
+            ("glycern", "glycerin"),
+            ("glycrin", "glycerin"),
+            ("glycerln", "glycerin"),
+            ("dimethcone", "dimethicone"),
+            ("phenoxyethanl", "phenoxyethanol"),
             ("vitamin e", "tocopherol"),
             ("vit e", "tocopherol"),
             ("vitamin c", "ascorbic acid"),
@@ -227,9 +236,23 @@ enum IngredientMatcher {
         }
 
         for custom in customIngredients {
-            let needle = normalizedForMatching(custom)
+            let trimmed = custom.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !trimmed.isEmpty else { continue }
+            let needle = normalizedForMatching(trimmed)
+            // 過短英文避免誤傷；中日韓等可較短。
             guard needle.count >= 5 || needle.unicodeScalars.contains(where: { !$0.isASCII }) else { continue }
-            let label = "自訂風險（\(custom)）"
+
+            let found = ingredients.contains { ingredient in
+                let db = IngredientDatabaseManager.shared.lookup(ingredientName: ingredient)
+                return CustomRiskIngredientMatcher.matchesAny(
+                    name: ingredient,
+                    databaseItem: db,
+                    customList: [trimmed]
+                )
+            }
+            guard found else { continue }
+
+            let label = "自訂風險（\(trimmed)）"
             if !results.contains(label) {
                 results.append(label)
             }
@@ -439,16 +462,7 @@ enum IngredientMatcher {
 
     /// 第三層：常見 OCR 近形字置換（|／夾在字母間的 1→l、0→o）。
     static func applyOCRGlyphFixes(_ text: String) -> String {
-        var value = text.replacingOccurrences(of: "|", with: "l")
-        if let oneAsL = try? NSRegularExpression(pattern: #"(?<=[A-Za-z])1(?=[A-Za-z])"#) {
-            let range = NSRange(value.startIndex..<value.endIndex, in: value)
-            value = oneAsL.stringByReplacingMatches(in: value, range: range, withTemplate: "l")
-        }
-        if let zeroAsO = try? NSRegularExpression(pattern: #"(?<=[A-Za-z])0(?=[A-Za-z])"#) {
-            let range = NSRange(value.startIndex..<value.endIndex, in: value)
-            value = zeroAsO.stringByReplacingMatches(in: value, range: range, withTemplate: "o")
-        }
-        return value
+        IngredientParser.replaceCommonOCRCharacters(in: text)
     }
 
     /// 資料庫比對入口（相容舊名）。

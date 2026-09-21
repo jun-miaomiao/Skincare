@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// 手動修正／新增成分：底部 Sheet + 即時字典搜尋建議。
+/// 手動修正／新增成分：底部 Sheet + 字典式防抖搜尋（背景執行，避免打字卡住）。
 struct IngredientSearchSheet: View {
     let title: String
     let prompt: String
@@ -11,12 +11,12 @@ struct IngredientSearchSheet: View {
     @Environment(\.dismiss) private var dismiss
     @FocusState private var isFieldFocused: Bool
 
+    @State private var suggestions: [IngredientItem] = []
+    @State private var isSearching = false
+    @State private var searchTask: Task<Void, Never>?
+
     private var trimmed: String {
         text.trimmingCharacters(in: .whitespacesAndNewlines)
-    }
-
-    private var suggestions: [IngredientItem] {
-        IngredientDatabaseManager.shared.suggest(matching: trimmed, limit: 8)
     }
 
     var body: some View {
@@ -50,6 +50,13 @@ struct IngredientSearchSheet: View {
             .onAppear {
                 IngredientDatabaseManager.shared.ensureLoaded()
                 isFieldFocused = true
+                scheduleSearch(text)
+            }
+            .onChange(of: text) { _, newValue in
+                scheduleSearch(newValue)
+            }
+            .onDisappear {
+                searchTask?.cancel()
             }
         }
         .presentationDetents([.medium, .large])
@@ -72,7 +79,10 @@ struct IngredientSearchSheet: View {
                     dismiss()
                 }
 
-            if !text.isEmpty {
+            if isSearching {
+                ProgressView()
+                    .controlSize(.small)
+            } else if !text.isEmpty {
                 Button {
                     text = ""
                     isFieldFocused = true
@@ -103,6 +113,23 @@ struct IngredientSearchSheet: View {
             }
             .frame(maxWidth: .infinity)
             .padding(.horizontal, 24)
+        } else if !isSearchReady(trimmed) {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("請再輸入至少一個英文字母，或輸入中文關鍵字")
+                    .font(.caption)
+                    .foregroundColor(Theme.muted)
+                    .padding(.horizontal, 20)
+                    .padding(.top, 8)
+                Spacer()
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        } else if isSearching && suggestions.isEmpty {
+            VStack {
+                Spacer(minLength: 24)
+                ProgressView()
+                Spacer()
+            }
+            .frame(maxWidth: .infinity)
         } else if suggestions.isEmpty {
             VStack(alignment: .leading, spacing: 8) {
                 Text("資料庫無完全相符項目，可直接按下「完成」新增自訂成分")
@@ -142,6 +169,41 @@ struct IngredientSearchSheet: View {
             .listStyle(.plain)
             .scrollContentBackground(.hidden)
         }
+    }
+
+    private func scheduleSearch(_ raw: String) {
+        searchTask?.cancel()
+        let query = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard isSearchReady(query) else {
+            isSearching = false
+            suggestions = []
+            return
+        }
+
+        isSearching = true
+        searchTask = Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 220_000_000)
+            guard !Task.isCancelled else { return }
+
+            let results = await Task.detached(priority: .userInitiated) {
+                IngredientDatabaseManager.shared.suggest(matching: query, limit: 8)
+            }.value
+
+            guard !Task.isCancelled else { return }
+            suggestions = results
+            isSearching = false
+        }
+    }
+
+    /// 與字典相同：拉丁至少 2 字、中日韓 1 字。
+    private func isSearchReady(_ query: String) -> Bool {
+        guard !query.isEmpty else { return false }
+        if query.contains(where: { character in
+            character.unicodeScalars.contains { (0x4E00...0x9FFF).contains($0.value) }
+        }) {
+            return true
+        }
+        return query.count >= 2
     }
 }
 

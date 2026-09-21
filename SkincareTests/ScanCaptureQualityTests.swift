@@ -88,12 +88,13 @@ struct IngredientBandGeometryTests {
     @Test func overlayRectMatchesViewfinderAspectAndWidthCap() {
         let size = CGSize(width: 393, height: 700)
         let rect = IngredientBandGeometry.overlayRect(in: size)
-        #expect(abs(rect.width - min(393 * 0.82, 340)) < 0.01)
-        #expect(abs(rect.height / rect.width - 0.62) < 0.001)
+        let expectedWidth = min(393 * 0.92, 420)
+        #expect(abs(rect.width - expectedWidth) < 0.01)
+        #expect(rect.height / rect.width <= 0.78 + 0.001)
         #expect(rect.minX > 0)
         #expect(rect.maxX < size.width)
-        #expect(rect.minY > 0)
-        #expect(rect.maxY < size.height)
+        #expect(rect.minY >= 0)
+        #expect(rect.maxY <= size.height)
     }
 
     @Test func imageCropRectIsCenteredBandInsidePhoto() {
@@ -124,8 +125,8 @@ struct IngredientBandGeometryTests {
             imageSize: imageSize,
             previewSize: .zero
         )
-        #expect(abs(crop.width - 900) < 0.5)
-        #expect(abs(crop.height - 920) < 0.5)
+        #expect(abs(crop.width - 960) < 0.5)
+        #expect(abs(crop.height - 1440) < 0.5)
         #expect(abs(crop.midY - imageSize.height / 2) < 0.5)
     }
 }

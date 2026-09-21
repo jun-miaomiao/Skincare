@@ -172,13 +172,16 @@ enum ScanSessionProcessor {
                 fullText = ingredients.joined(separator: ", ")
                 print("🔗 Sequential Overlap Merge 後成分數: \(ingredients.count)")
             } else if let only = perImageLists.first {
-                ingredients = only
+                // 與貼上／多圖路徑一致：清掉包裝殘字與已命中成分的碎片未知項。
+                ingredients = SequentialOverlapMerger.stripRedundantUnknowns(only)
                 fullText = IngredientParser.preprocessIngredientListText(
                     perImageTexts.first ?? fallbackJoinedText
                 )
             } else {
-                ingredients = SequentialOverlapMerger.orderPreservingUnique(
-                    displayList(from: fallbackJoinedText)
+                ingredients = SequentialOverlapMerger.stripRedundantUnknowns(
+                    SequentialOverlapMerger.orderPreservingUnique(
+                        displayList(from: fallbackJoinedText)
+                    )
                 )
                 fullText = IngredientParser.preprocessIngredientListText(fallbackJoinedText)
             }

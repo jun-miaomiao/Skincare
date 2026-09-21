@@ -186,13 +186,17 @@ struct IngredientDetailView: View {
         }
     }
 
+    /// 兩列徽章欄同寬，右側「安心度／刺激…」文案左緣對齊（膠囊本身靠左不動）。
+    private static let riskBadgeColumnWidth: CGFloat = 118
+
     private var riskAxesSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             sectionTitle("安心度與刺激風險")
 
             VStack(alignment: .leading, spacing: 14) {
-                HStack(spacing: 14) {
+                HStack(alignment: .top, spacing: 14) {
                     ConcernBadge(band: ingredient.concernBand)
+                        .frame(width: Self.riskBadgeColumnWidth, alignment: .leading)
 
                     VStack(alignment: .leading, spacing: 2) {
                         Text("安心度 \(ingredient.concernScore) / 9")
@@ -208,8 +212,9 @@ struct IngredientDetailView: View {
 
                 Divider()
 
-                HStack(spacing: 14) {
+                HStack(alignment: .top, spacing: 14) {
                     IrritationBadge(risk: ingredient.irritationRisk)
+                        .frame(width: Self.riskBadgeColumnWidth, alignment: .leading)
 
                     VStack(alignment: .leading, spacing: 2) {
                         Text(ingredient.irritationRisk.rawValue)

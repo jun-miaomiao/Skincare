@@ -246,8 +246,17 @@ enum IngredientParser {
     }
 
     static func replaceCommonOCRCharacters(in text: String) -> String {
-        guard text.contains("|") else { return text }
-        return text.replacingOccurrences(of: "|", with: "l")
+        // 與 IngredientMatcher.applyOCRGlyphFixes 同一套規則（|、字母間 1→l、0→o）。
+        var value = text.replacingOccurrences(of: "|", with: "l")
+        if let oneAsL = try? NSRegularExpression(pattern: #"(?<=[A-Za-z])1(?=[A-Za-z])"#) {
+            let range = NSRange(value.startIndex..<value.endIndex, in: value)
+            value = oneAsL.stringByReplacingMatches(in: value, range: range, withTemplate: "l")
+        }
+        if let zeroAsO = try? NSRegularExpression(pattern: #"(?<=[A-Za-z])0(?=[A-Za-z])"#) {
+            let range = NSRange(value.startIndex..<value.endIndex, in: value)
+            value = zeroAsO.stringByReplacingMatches(in: value, range: range, withTemplate: "o")
+        }
+        return value
     }
 
     /// 剝離**尾端**濃度％與短縮寫代碼（`(DHHB)`、`(6.0%)`）；句中的植物括號別名不動。
