@@ -207,24 +207,6 @@ private struct CameraViewIOS: View {
                 )
             }
 
-            if let pending = shotPendingAlign {
-                PhotoLibraryFrameAlignView(
-                    image: pending,
-                    stepLabel: isFollowUpCaptureMode
-                        ? "補拍"
-                        : "\(confirmedCrops.count + 1)/\(MultiShotCaptureGuide.maxShotCount)",
-                    confirmTitle: "確認這張",
-                    onConfirm: { data in
-                        acceptAlignedShot(data)
-                    },
-                    onCancel: {
-                        shotPendingAlign = nil
-                    }
-                )
-                .ignoresSafeArea()
-                .zIndex(30)
-            }
-
             if showUnclearResult {
                 ScanUnclearResultOverlay(
                     prompt: unclearPrompt,
@@ -309,6 +291,26 @@ private struct CameraViewIOS: View {
         }
         .sheet(isPresented: $showPaywall) {
             PaywallView(reason: paywallReason)
+        }
+        .fullScreenCover(isPresented: Binding(
+            get: { shotPendingAlign != nil },
+            set: { if !$0 { shotPendingAlign = nil } }
+        )) {
+            if let pending = shotPendingAlign {
+                PhotoLibraryFrameAlignView(
+                    image: pending,
+                    hint: isFollowUpCaptureMode
+                        ? "補拍：把全成分拖進白框，再按確認這張"
+                        : "第 \(confirmedCrops.count + 1) 張：把全成分拖進白框，再按確認這張",
+                    confirmTitle: "確認這張",
+                    onConfirm: { data in
+                        acceptAlignedShot(data)
+                    },
+                    onCancel: {
+                        shotPendingAlign = nil
+                    }
+                )
+            }
         }
     }
 

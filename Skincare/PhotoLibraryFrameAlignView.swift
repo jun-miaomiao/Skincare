@@ -57,6 +57,7 @@ struct PhotoLibraryFrameAlignFlow: View {
 struct PhotoLibraryFrameAlignView: View {
     let image: UIImage
     var stepLabel: String? = nil
+    var hint: String = "請將全成分對準白框（可雙指縮放、拖曳）"
     var confirmTitle: String = "開始辨識"
     let onConfirm: (Data) -> Void
     let onCancel: () -> Void
@@ -85,7 +86,7 @@ struct PhotoLibraryFrameAlignView: View {
                             .frame(width: rect.width, height: rect.height)
                             .position(x: rect.midX, y: rect.midY)
 
-                        Text("請將全成分對準白框（可雙指縮放、拖曳）")
+                        Text(hint)
                             .font(.caption.weight(.semibold))
                             .foregroundColor(.white)
                             .padding(.horizontal, 10)
@@ -123,7 +124,7 @@ struct PhotoLibraryFrameAlignView: View {
                                 .padding(.trailing, 16)
                         }
                     }
-                    .padding(.top, topInset + 6)
+                    .padding(.top, max(topInset, 54) + 8)
 
                     Spacer(minLength: 0)
                         .allowsHitTesting(false)
@@ -145,7 +146,7 @@ struct PhotoLibraryFrameAlignView: View {
                     }
                     .buttonStyle(.plain)
                     .padding(.horizontal, 22)
-                    .padding(.bottom, bottomInset + 16)
+                    .padding(.bottom, max(bottomInset, 12) + 24)
                 }
             }
             .ignoresSafeArea()
