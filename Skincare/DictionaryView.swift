@@ -195,13 +195,12 @@ struct DictionaryView: View {
                 }
                 _ = FavoriteManager.addIngredient(item, in: modelContext)
             } label: {
-                CircularSwipeActionLabel(
-                    title: "最愛",
-                    systemImage: subscriptionStore.isPremium ? "star" : "lock",
-                    tint: .orange
+                Label(
+                    "最愛",
+                    systemImage: subscriptionStore.isPremium ? "star.fill" : "lock.fill"
                 )
             }
-            .tint(.clear)
+            .tint(.orange)
             .disabled(FavoriteManager.isIngredientFavorited(item, favoritedKeys: favoritedIngredientKeys))
         }
         .listRowInsets(EdgeInsets(top: 6, leading: 22, bottom: 6, trailing: 22))

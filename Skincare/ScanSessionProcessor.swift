@@ -1,5 +1,8 @@
 import Foundation
 import SwiftData
+#if canImport(UIKit)
+import UIKit
+#endif
 
 struct ScanSessionResult: Sendable {
     let ingredients: [String]
@@ -379,4 +382,81 @@ enum ScanSessionProcessor {
             resolvedSnapshots: snapshots
         )
     }
+
+    #if canImport(UIKit)
+    /// 相機先裁成分帶；若幾乎沒命中，再用整張圖重跑（預覽比例對不準時常見）。
+    static func analyzeCapturedPhotos(
+        _ images: [UIImage],
+        previewSize: CGSize,
+        profile: UserProfile?
+    ) async -> ScanSessionResult {
+        let cropped = images.compactMap {
+            IngredientBandPreprocessor.jpegDataForCameraOCR($0, previewSize: previewSize)
+        }
+        let bandResult: ScanSessionResult
+        if cropped.isEmpty {
+            bandResult = await analyze(imageDataList: [], profile: profile, usesIngredientBandCrop: true)
+        } else {
+            bandResult = await analyze(
+                imageDataList: cropped,
+                profile: profile,
+                usesIngredientBandCrop: true
+            )
+        }
+        // 已對到夠多就不必再跑。短成分表也走這裡，不會因為不到 15 項被整張圖蓋掉。
+        if !bandResult.needsCaptureRetake, bandResult.dictionaryHitCount >= 15 {
+            return bandResult
+        }
+
+        let full = images.compactMap { $0.jpegDataFlattenedForOCR(compressionQuality: 0.86) }
+        guard !full.isEmpty else { return bandResult }
+        let fullResult = await analyze(
+            imageDataList: full,
+            profile: profile,
+            usesIngredientBandCrop: false
+        )
+        return preferFullImage(fullResult, overFramed: bandResult)
+    }
+
+    /// 相簿對框裁切後辨識；命中偏少時改用原圖再跑一次，取較完整的結果。
+    static func analyzeAlignedLibraryPhotos(
+        croppedJPEG: [Data],
+        originalImages: [UIImage],
+        profile: UserProfile?
+    ) async -> ScanSessionResult {
+        let croppedResult = await analyze(
+            imageDataList: croppedJPEG,
+            profile: profile,
+            usesIngredientBandCrop: true
+        )
+        if !croppedResult.needsCaptureRetake, croppedResult.dictionaryHitCount >= 15 {
+            return croppedResult
+        }
+        let full = originalImages.compactMap { $0.jpegDataFlattenedForOCR(compressionQuality: 0.86) }
+        guard !full.isEmpty else { return croppedResult }
+        let fullResult = await analyze(
+            imageDataList: full,
+            profile: profile,
+            usesIngredientBandCrop: false
+        )
+        return preferFullImage(fullResult, overFramed: croppedResult)
+    }
+
+    /// 白框結果優先。整張照片要明顯多出至少 4 項才替換，
+    /// 避免真正只有少數成分的產品被包裝文案灌進去。
+    /// 白框完全沒對到時，整張只要有命中就採用。
+    private static func preferFullImage(
+        _ full: ScanSessionResult,
+        overFramed framed: ScanSessionResult
+    ) -> ScanSessionResult {
+        let extra = full.dictionaryHitCount - framed.dictionaryHitCount
+        if extra >= 4 {
+            return full
+        }
+        if framed.dictionaryHitCount == 0, full.dictionaryHitCount > 0 {
+            return full
+        }
+        return framed
+    }
+    #endif
 }

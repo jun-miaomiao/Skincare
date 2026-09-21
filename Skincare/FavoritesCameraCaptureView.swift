@@ -220,17 +220,39 @@ struct FavoritesCameraCaptureView: View {
         guard !isScanning, !isFinishingMultiShot, capturedImages.count >= 1 else { return }
         isFinishingMultiShot = true
         defer { isFinishingMultiShot = false }
-        let dataList = capturedImages.compactMap {
-            IngredientBandPreprocessor.jpegDataForCameraOCR(
-                $0,
-                previewSize: cameraPreviewSize
-            )
+        isScanning = true
+        let profile = profileList.first
+        let result = await ScanSessionProcessor.analyzeCapturedPhotos(
+            capturedImages,
+            previewSize: cameraPreviewSize,
+            profile: profile
+        )
+        let primary = capturedImages.first.flatMap {
+            IngredientBandPreprocessor.jpegDataForCameraOCR($0, previewSize: cameraPreviewSize)
+                ?? $0.jpegDataFlattenedForOCR(compressionQuality: 0.86)
         }
-        guard !dataList.isEmpty else { return }
-        await process(dataList: dataList)
-        if !showUnclearResult {
-            resetCapturedImages()
+        isScanning = false
+        guard let primary else { return }
+
+        if result.needsCaptureRetake {
+            unclearPrompt = result.ingredients.isEmpty
+                ? .noReadableText
+                : .lowCaptureQuality(identifiedCount: result.dictionaryHitCount)
+            if result.dictionaryHitCount > 0 {
+                deferredLowQualityResult = result
+                deferredLowQualityImage = primary
+            } else {
+                deferredLowQualityResult = nil
+                deferredLowQualityImage = nil
+            }
+            withAnimation(.spring(response: 0.38, dampingFraction: 0.78)) {
+                showUnclearResult = true
+            }
+            return
         }
+
+        commitSuccessfulScan(result: result, primaryImageData: primary)
+        resetCapturedImages()
     }
 
     private func resetCapturedImages() {

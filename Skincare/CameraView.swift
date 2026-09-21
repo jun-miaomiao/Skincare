@@ -76,7 +76,12 @@ private struct CameraViewIOS: View {
                     onComplete: { dataList in
                         retryLibraryImages = session.images
                         libraryAlignSession = nil
-                        Task { await processImagesForAlerts(dataList: dataList, fromIngredientBand: true) }
+                        Task {
+                            await processLibraryAlignedImages(
+                                cropped: dataList,
+                                originals: session.images
+                            )
+                        }
                     },
                     onCancel: {
                         libraryAlignSession = nil
@@ -479,17 +484,36 @@ private struct CameraViewIOS: View {
         guard ensureCameraScanAllowed() else { return }
         isFinishingMultiShot = true
         defer { isFinishingMultiShot = false }
-        let dataList = capturedImages.compactMap {
-            IngredientBandPreprocessor.jpegDataForCameraOCR(
-                $0,
-                previewSize: cameraPreviewSize
-            )
+        scanningUsesMultiAngleCopy = capturedImages.count > 1
+        isScanning = true
+        showAvoidAlert = false
+        showScanSummarySheet = false
+        isFollowUpCaptureMode = false
+
+        let profile: UserProfile? = profileList.first
+        let result = await ScanSessionProcessor.analyzeCapturedPhotos(
+            capturedImages,
+            previewSize: cameraPreviewSize,
+            profile: profile
+        )
+        let primary = capturedImages.first.flatMap {
+            IngredientBandPreprocessor.jpegDataForCameraOCR($0, previewSize: cameraPreviewSize)
+                ?? $0.jpegDataFlattenedForOCR(compressionQuality: 0.86)
         }
-        guard !dataList.isEmpty else { return }
-        await processImagesForAlerts(dataList: dataList, fromIngredientBand: true)
-        if latestScanPayload != nil {
-            resetCapturedImages()
+
+        isScanning = false
+        scanningUsesMultiAngleCopy = false
+
+        guard let primary else { return }
+        scannedImageData = primary
+
+        if result.needsCaptureRetake {
+            presentUnclearCapture(result: result, primaryImageData: primary)
+            return
         }
+
+        commitSuccessfulScan(result: result, primaryImageData: primary)
+        resetCapturedImages()
     }
 
     private func resetCapturedImages() {
@@ -630,6 +654,42 @@ private struct CameraViewIOS: View {
         } else {
             showScanSummarySheet = true
         }
+    }
+
+    @MainActor
+    private func processLibraryAlignedImages(cropped: [Data], originals: [UIImage]) async {
+        guard let primary = cropped.first else { return }
+
+        if isFollowUpCaptureMode {
+            await processFollowUpCapture(data: primary)
+            return
+        }
+
+        guard ensureCameraScanAllowed() else { return }
+
+        scanningUsesMultiAngleCopy = cropped.count > 1
+        isScanning = true
+        showAvoidAlert = false
+        showScanSummarySheet = false
+        isFollowUpCaptureMode = false
+        scannedImageData = primary
+
+        let profile: UserProfile? = profileList.first
+        let result = await ScanSessionProcessor.analyzeAlignedLibraryPhotos(
+            croppedJPEG: cropped,
+            originalImages: originals,
+            profile: profile
+        )
+
+        isScanning = false
+        scanningUsesMultiAngleCopy = false
+
+        if result.needsCaptureRetake {
+            presentUnclearCapture(result: result, primaryImageData: primary)
+            return
+        }
+
+        commitSuccessfulScan(result: result, primaryImageData: primary)
     }
 
     @MainActor

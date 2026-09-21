@@ -421,13 +421,8 @@ struct IngredientDetailListView: View {
                         guard let index = items.firstIndex(where: { $0.id == item.id }) else { return }
                         onDelete(IndexSet(integer: index))
                     } label: {
-                        CircularSwipeActionLabel(
-                            title: "刪除",
-                            systemImage: "trash",
-                            tint: .red
-                        )
+                        Label("刪除", systemImage: "trash")
                     }
-                    .tint(.clear)
                 }
         }
     }
@@ -454,13 +449,12 @@ struct IngredientDetailListView: View {
                 }
                 addIngredientToFavorites(item)
             } label: {
-                CircularSwipeActionLabel(
-                    title: "最愛",
-                    systemImage: subscriptionStore.isPremium ? "star" : "lock",
-                    tint: .orange
+                Label(
+                    "最愛",
+                    systemImage: subscriptionStore.isPremium ? "star.fill" : "lock.fill"
                 )
             }
-            .tint(.clear)
+            .tint(.orange)
             .disabled(isIngredientAlreadyFavorited(item))
         }
         .listRowInsets(EdgeInsets(top: 5, leading: 18, bottom: 5, trailing: 18))

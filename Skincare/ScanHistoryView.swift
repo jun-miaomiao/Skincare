@@ -254,26 +254,17 @@ struct ScanHistoryView: View {
                                 }
                                 _ = FavoriteManager.addFromScanHistory(entity, in: modelContext)
                             } label: {
-                                CircularSwipeActionLabel(
-                                    title: "最愛",
-                                    systemImage: subscriptionStore.isPremium ? "star" : "lock",
-                                    tint: .orange
-                                )
+                                Label("最愛", systemImage: subscriptionStore.isPremium ? "star.fill" : "lock.fill")
                             }
-                            .tint(.clear)
+                            .tint(.orange)
                             .disabled(FavoriteManager.isFavorited(entity.recordID, favoritedScanIDs: favoritedScanIDs))
                         }
                         .swipeActions(edge: .trailing, allowsFullSwipe: true) {
                             Button(role: .destructive) {
                                 deleteRecord(entity)
                             } label: {
-                                CircularSwipeActionLabel(
-                                    title: "刪除",
-                                    systemImage: "trash",
-                                    tint: .red
-                                )
+                                Label("刪除", systemImage: "trash")
                             }
-                            .tint(.clear)
                         }
                     }
                 }

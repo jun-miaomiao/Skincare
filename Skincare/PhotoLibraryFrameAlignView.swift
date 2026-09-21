@@ -103,9 +103,12 @@ struct PhotoLibraryFrameAlignView: View {
                     Button("取消", action: onCancel)
                         .font(.body.weight(.semibold))
                         .foregroundColor(.white)
-                        .padding(16)
+                        .padding(.horizontal, 18)
+                        .padding(.vertical, 12)
+                        .contentShape(Rectangle())
 
-                    Spacer()
+                    Spacer(minLength: 0)
+                        .allowsHitTesting(false)
 
                     if let stepLabel {
                         Text(stepLabel)
@@ -117,8 +120,10 @@ struct PhotoLibraryFrameAlignView: View {
                             .padding(.trailing, 16)
                     }
                 }
+                .padding(.top, 8)
 
                 Spacer(minLength: 0)
+                    .allowsHitTesting(false)
 
                 Button {
                     confirmCrop()
@@ -134,6 +139,7 @@ struct PhotoLibraryFrameAlignView: View {
                 .padding(.horizontal, 22)
                 .padding(.bottom, 28)
             }
+            .safeAreaPadding(.top, 4)
         }
     }
 
@@ -351,6 +357,9 @@ struct FrameAlignScrollRepresentable: UIViewRepresentable {
         scroll.contentInsetAdjustmentBehavior = .never
         scroll.delaysContentTouches = false
         scroll.canCancelContentTouches = true
+        scroll.minimumZoomScale = 0.2
+        scroll.maximumZoomScale = 8
+        scroll.pinchGestureRecognizer?.isEnabled = true
 
         let imageView = UIImageView(image: image)
         imageView.contentMode = .scaleToFill
@@ -388,15 +397,17 @@ struct FrameAlignScrollRepresentable: UIViewRepresentable {
             return
         }
 
-        // 僅旋轉／大幅改尺寸時重排；一般 SwiftUI 刷新絕對不要動 zoomScale。
+        // 已排版後只同步 inset；SwiftUI 重繪／小幅改尺寸不得重設 zoom。
         let size = scroll.bounds.size
         guard size.width > 1, size.height > 1 else { return }
-        let sizeChanged = abs(size.width - context.coordinator.lastLayoutSize.width) > 12
-            || abs(size.height - context.coordinator.lastLayoutSize.height) > 12
-        if !context.coordinator.hasLaidOut || sizeChanged {
-            context.coordinator.layoutImageIfNeeded(in: scroll, image: image, force: sizeChanged)
+        let rotated = abs(size.width - context.coordinator.lastLayoutSize.height) < 24
+            && abs(size.height - context.coordinator.lastLayoutSize.width) < 24
+            && abs(size.width - context.coordinator.lastLayoutSize.width) > 40
+        if !context.coordinator.hasLaidOut {
+            context.coordinator.layoutImageIfNeeded(in: scroll, image: image, force: true)
+        } else if rotated {
+            context.coordinator.layoutImageIfNeeded(in: scroll, image: image, force: true)
         } else {
-            // 尺寸未變時仍同步白框 inset，確保可拖曳對齊。
             context.coordinator.applyAlignmentInsets(in: scroll)
         }
     }

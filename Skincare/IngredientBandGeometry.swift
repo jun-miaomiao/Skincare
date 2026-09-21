@@ -8,9 +8,9 @@ enum IngredientBandGeometry {
     static let heightOverWidth: CGFloat = 0.62
     static let bottomPaddingRatio: CGFloat = 0.08
     static let minBottomPadding: CGFloat = 36
-    /// 裁切比白框略大，避免貼邊的密排 INCI 被切字。
-    static let cropPaddingRatioX: CGFloat = 0.06
-    static let cropPaddingRatioY: CGFloat = 0.08
+    /// OCR 裁切比白框更高更寬：視覺框只負責對焦，辨識要多吃上下密排成分。
+    static let cropPaddingRatioX: CGFloat = 0.12
+    static let cropPaddingRatioY: CGFloat = 0.42
 
     static func bottomPadding(forHeight height: CGFloat) -> CGFloat {
         max(height * bottomPaddingRatio, minBottomPadding)
@@ -66,10 +66,21 @@ enum IngredientBandGeometry {
             dx: -mapped.width * cropPaddingRatioX,
             dy: -mapped.height * cropPaddingRatioY
         )
-        let clipped = padded.intersection(imageBounds)
+        var clipped = padded.intersection(imageBounds)
         guard clipped.width >= imageSize.width * 0.2,
-              clipped.height >= imageSize.height * 0.12 else {
+              clipped.height >= imageSize.height * 0.10 else {
             return fallbackCenterBand(in: imageSize)
+        }
+        // 預覽 16:9、照片 4:3 時對不準，至少給足夠高的橫帶，避免只吃到空白。
+        let minHeight = imageSize.height * 0.58
+        if clipped.height < minHeight {
+            let extra = (minHeight - clipped.height) / 2
+            clipped = CGRect(
+                x: clipped.minX,
+                y: max(0, clipped.minY - extra),
+                width: clipped.width,
+                height: min(minHeight, imageSize.height)
+            ).intersection(imageBounds)
         }
         return clipped
     }
@@ -77,8 +88,8 @@ enum IngredientBandGeometry {
     /// 沒有預覽尺寸時：取照片中央橫帶（成分表通常在這個位置）。
     static func fallbackCenterBand(in imageSize: CGSize) -> CGRect {
         let bounds = CGRect(origin: .zero, size: imageSize)
-        let width = imageSize.width * 0.90
-        let height = imageSize.height * 0.46
+        let width = imageSize.width * 0.94
+        let height = imageSize.height * 0.72
         let rect = CGRect(
             x: (imageSize.width - width) / 2,
             y: (imageSize.height - height) / 2,
