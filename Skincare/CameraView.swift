@@ -110,7 +110,11 @@ private struct CameraViewIOS: View {
     private var cameraBody: some View {
         ZStack {
             if camera.isConfigured {
-                CameraPreviewView(session: camera.session) { devicePoint in
+                CameraPreviewView(
+                    session: camera.session,
+                    textBoxes: camera.detectedTextBoxes,
+                    detectionImageSize: camera.detectionImageSize
+                ) { devicePoint in
                     camera.focus(atDevicePoint: devicePoint)
                 }
                 // 僅延伸上方，不可蓋過底部系統 TabBar。

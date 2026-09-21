@@ -31,7 +31,11 @@ struct FavoritesCameraCaptureView: View {
         ZStack {
             #if os(iOS)
             if camera.isConfigured {
-                CameraPreviewView(session: camera.session) { devicePoint in
+                CameraPreviewView(
+                    session: camera.session,
+                    textBoxes: camera.detectedTextBoxes,
+                    detectionImageSize: camera.detectionImageSize
+                ) { devicePoint in
                     camera.focus(atDevicePoint: devicePoint)
                 }
                 .ignoresSafeArea()
