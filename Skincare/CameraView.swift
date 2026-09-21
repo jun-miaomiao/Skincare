@@ -53,6 +53,7 @@ private struct CameraViewIOS: View {
     @State private var isCapturingShot = false
     @State private var isFinishingMultiShot = false
     @State private var cameraPreviewSize: CGSize = .zero
+    @State private var focusIndicatorPoint: CGPoint?
     @State private var unclearPrompt: ScanUnclearPrompt = .noReadableText
     @State private var deferredLowQualityResult: ScanSessionResult?
     @State private var deferredLowQualityImage: Data?
@@ -111,6 +112,16 @@ private struct CameraViewIOS: View {
                     isFollowUpMode: isFollowUpCaptureMode
                 )
                 .ignoresSafeArea(edges: .top)
+                .allowsHitTesting(false)
+            }
+
+            // 白框／提示層會擋住 UIView 點擊；用 SwiftUI 手勢承接對焦。
+            if camera.isConfigured, !camera.isCameraUnavailable, !isScanning {
+                CameraTapFocusLayer(
+                    onFocus: { camera.focus(atDevicePoint: $0) },
+                    indicatorPoint: $focusIndicatorPoint
+                )
+                .ignoresSafeArea(edges: .top)
             }
 
             VStack(spacing: 0) {
@@ -131,18 +142,19 @@ private struct CameraViewIOS: View {
                     .padding(.trailing, 18)
                     .padding(.top, 10)
                 }
-                .allowsHitTesting(true)
 
                 if isFollowUpCaptureMode {
                     followUpCaptureBanner
                         .padding(.horizontal, 20)
                         .padding(.top, 8)
                         .transition(.move(edge: .top).combined(with: .opacity))
+                        .allowsHitTesting(false)
                 } else if !camera.isCameraUnavailable {
                     multiShotHintBanner
                         .padding(.horizontal, 20)
                         .padding(.top, 8)
                         .transition(.move(edge: .top).combined(with: .opacity))
+                        .allowsHitTesting(false)
                 }
 
                 Spacer(minLength: 0)

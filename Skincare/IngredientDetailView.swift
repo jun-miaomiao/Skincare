@@ -57,7 +57,7 @@ struct IngredientDetailView: View {
                 .padding(.bottom, 40)
             }
         }
-        .navigationTitle("成分詳情")
+        .navigationTitle("成分資訊")
         .appDetailNavigationChrome()
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {

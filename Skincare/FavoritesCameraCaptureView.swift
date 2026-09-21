@@ -22,6 +22,7 @@ struct FavoritesCameraCaptureView: View {
     @State private var isCapturingShot = false
     @State private var isFinishingMultiShot = false
     @State private var cameraPreviewSize: CGSize = .zero
+    @State private var focusIndicatorPoint: CGPoint?
     @State private var unclearPrompt: ScanUnclearPrompt = .noReadableText
     @State private var deferredLowQualityResult: ScanSessionResult?
     @State private var deferredLowQualityImage: Data?
@@ -55,6 +56,15 @@ struct FavoritesCameraCaptureView: View {
                 }
             } else {
                 CameraScanGuideOverlay(capturedCount: capturedImages.count)
+                    .allowsHitTesting(false)
+            }
+
+            if camera.isConfigured, !camera.isCameraUnavailable, !isScanning {
+                CameraTapFocusLayer(
+                    onFocus: { camera.focus(atDevicePoint: $0) },
+                    indicatorPoint: $focusIndicatorPoint
+                )
+                .ignoresSafeArea()
             }
 
             VStack(spacing: 0) {
@@ -86,9 +96,11 @@ struct FavoritesCameraCaptureView: View {
                                 .stroke(Color.white.opacity(0.16), lineWidth: 1)
                         )
                         .padding(.horizontal, 20)
+                        .allowsHitTesting(false)
                 }
 
                 Spacer()
+                    .allowsHitTesting(false)
 
                 MultiShotCaptureBar(
                     capturedCount: capturedImages.count,

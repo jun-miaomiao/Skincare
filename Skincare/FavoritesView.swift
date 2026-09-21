@@ -1,7 +1,7 @@
 import SwiftUI
 import SwiftData
 
-/// 掃描完成後推入成分詳情用的導航值（Hashable + 預先算好顯示參數）。
+/// 掃描完成後推入成分資訊用的導航值（Hashable + 預先算好顯示參數）。
 private struct FavoriteScanDetailRoute: Identifiable, Hashable {
     let id = UUID()
     let ingredients: [String]
@@ -61,7 +61,7 @@ struct FavoritesView: View {
     @State private var unclearPrompt: ScanUnclearPrompt = .noReadableText
 
     @State private var pendingOpenIngredientDetail = false
-    /// 掃描後推入成分詳情（item-based，避免 isPresented + 空 destination 卡死）。
+    /// 掃描後推入成分資訊（item-based，避免 isPresented + 空 destination 卡死）。
     @State private var ingredientDetailRoute: FavoriteScanDetailRoute?
     /// 貼上成分表完成後直接推入成分清單。
     @State private var pendingManualDetailRoute: FavoriteScanDetailRoute?

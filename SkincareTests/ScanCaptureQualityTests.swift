@@ -88,9 +88,9 @@ struct IngredientBandGeometryTests {
     @Test func overlayRectMatchesViewfinderAspectAndWidthCap() {
         let size = CGSize(width: 393, height: 700)
         let rect = IngredientBandGeometry.overlayRect(in: size)
-        let expectedWidth = min(393 * 0.92, 420)
+        let expectedWidth = min(393 * 0.86, 370)
         #expect(abs(rect.width - expectedWidth) < 0.01)
-        #expect(rect.height / rect.width <= 0.78 + 0.001)
+        #expect(rect.height / rect.width <= 0.68 + 0.001)
         #expect(rect.minX > 0)
         #expect(rect.maxX < size.width)
         #expect(rect.minY >= 0)
@@ -125,8 +125,8 @@ struct IngredientBandGeometryTests {
             imageSize: imageSize,
             previewSize: .zero
         )
-        #expect(abs(crop.width - 960) < 0.5)
-        #expect(abs(crop.height - 1440) < 0.5)
+        #expect(abs(crop.width - 900) < 0.5)
+        #expect(abs(crop.height - 1000) < 0.5)
         #expect(abs(crop.midY - imageSize.height / 2) < 0.5)
     }
 }
