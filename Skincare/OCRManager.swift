@@ -27,7 +27,7 @@ class OCRManager {
     /// Vision 前處理：長邊上限（px），避免 4K/12MP 原圖拖慢辨識。
     private static let maxOCRLongEdge: CGFloat = 2000
     /// 相機已裁成分帶後，用較高解析度讀密排 INCI。
-    static let ingredientBandLongEdge: CGFloat = 2800
+    static let ingredientBandLongEdge: CGFloat = 2200
 
     private static let ciContext = CIContext(options: [.useSoftwareRenderer: false])
 
