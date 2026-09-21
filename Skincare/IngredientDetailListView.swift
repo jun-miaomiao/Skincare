@@ -423,6 +423,7 @@ struct IngredientDetailListView: View {
                     } label: {
                         Label("刪除", systemImage: "trash")
                     }
+                    .labelStyle(.iconOnly)
                 }
         }
     }
@@ -454,6 +455,7 @@ struct IngredientDetailListView: View {
                     systemImage: subscriptionStore.isPremium ? "star.fill" : "lock.fill"
                 )
             }
+            .labelStyle(.iconOnly)
             .tint(.orange)
             .disabled(isIngredientAlreadyFavorited(item))
         }

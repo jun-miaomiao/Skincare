@@ -200,6 +200,7 @@ struct DictionaryView: View {
                     systemImage: subscriptionStore.isPremium ? "star.fill" : "lock.fill"
                 )
             }
+            .labelStyle(.iconOnly)
             .tint(.orange)
             .disabled(FavoriteManager.isIngredientFavorited(item, favoritedKeys: favoritedIngredientKeys))
         }

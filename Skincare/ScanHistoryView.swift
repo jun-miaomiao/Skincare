@@ -256,6 +256,7 @@ struct ScanHistoryView: View {
                             } label: {
                                 Label("最愛", systemImage: subscriptionStore.isPremium ? "star.fill" : "lock.fill")
                             }
+                            .labelStyle(.iconOnly)
                             .tint(.orange)
                             .disabled(FavoriteManager.isFavorited(entity.recordID, favoritedScanIDs: favoritedScanIDs))
                         }
@@ -265,6 +266,7 @@ struct ScanHistoryView: View {
                             } label: {
                                 Label("刪除", systemImage: "trash")
                             }
+                            .labelStyle(.iconOnly)
                         }
                     }
                 }
