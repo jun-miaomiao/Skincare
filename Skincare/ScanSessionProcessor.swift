@@ -384,7 +384,8 @@ enum ScanSessionProcessor {
     }
 
     #if canImport(UIKit)
-    /// 與 1.0.3 相同：只辨識白框對應的成分帶，不再改跑整張照片。
+    /// 白框先辨識。實機裁切常常只含成分表的一段（模擬器裁切失敗時會改送整張，所以能到 42 項）。
+    /// 再辨識原圖，只有明顯多出成分才採用，短成分表不會被包裝文字蓋掉。
     static func analyzeCapturedPhotos(
         _ images: [UIImage],
         previewSize: CGSize,
@@ -393,25 +394,53 @@ enum ScanSessionProcessor {
         let cropped = images.compactMap {
             IngredientBandPreprocessor.jpegDataForCameraOCR($0, previewSize: previewSize)
         }
-        return await analyze(
+        let framed = await analyze(
             imageDataList: cropped,
             profile: profile,
             usesIngredientBandCrop: true
         )
+        let full = images.compactMap { $0.jpegDataFlattenedForOCR(compressionQuality: 0.86) }
+        guard !full.isEmpty else { return framed }
+        let whole = await analyze(
+            imageDataList: full,
+            profile: profile,
+            usesIngredientBandCrop: false
+        )
+        return preferRicherScan(whole, over: framed)
     }
 
-    /// 相簿對框後，只辨識使用者對準的那一塊。
     static func analyzeAlignedLibraryPhotos(
         croppedJPEG: [Data],
         originalImages: [UIImage],
         profile: UserProfile?
     ) async -> ScanSessionResult {
-        _ = originalImages
-        return await analyze(
+        let framed = await analyze(
             imageDataList: croppedJPEG,
             profile: profile,
             usesIngredientBandCrop: true
         )
+        let full = originalImages.compactMap { $0.jpegDataFlattenedForOCR(compressionQuality: 0.86) }
+        guard !full.isEmpty else { return framed }
+        let whole = await analyze(
+            imageDataList: full,
+            profile: profile,
+            usesIngredientBandCrop: false
+        )
+        return preferRicherScan(whole, over: framed)
+    }
+
+    /// 白框結果先留著。原圖要多出至少 4 項字典成分才換，避免少數成分的產品被文案灌水。
+    private static func preferRicherScan(
+        _ whole: ScanSessionResult,
+        over framed: ScanSessionResult
+    ) -> ScanSessionResult {
+        if whole.dictionaryHitCount >= framed.dictionaryHitCount + 4 {
+            return whole
+        }
+        if framed.dictionaryHitCount == 0, whole.dictionaryHitCount > 0 {
+            return whole
+        }
+        return framed
     }
     #endif
 }
