@@ -3,12 +3,12 @@ import SwiftUI
 
 /// 相機取景框幾何：畫面框與拍照裁切共用，避免「框內是成分、OCR 卻吃整張圖」。
 enum IngredientBandGeometry {
-    static let widthRatio: CGFloat = 0.90
-    static let maxFrameWidth: CGFloat = 380
-    static let heightOverWidth: CGFloat = 1.05
+    static let widthRatio: CGFloat = 0.82
+    static let maxFrameWidth: CGFloat = 340
+    static let heightOverWidth: CGFloat = 0.62
     static let bottomPaddingRatio: CGFloat = 0.08
     static let minBottomPadding: CGFloat = 36
-    /// 白框已蓋住整段成分，裁切只略為外擴，避免貼邊切字。
+    /// 裁切比白框略大，避免貼邊的密排 INCI 被切字。與 1.0.3 相同。
     static let cropPaddingRatioX: CGFloat = 0.06
     static let cropPaddingRatioY: CGFloat = 0.08
 
@@ -77,8 +77,8 @@ enum IngredientBandGeometry {
     /// 沒有預覽尺寸時：取照片中央橫帶（成分表通常在這個位置）。
     static func fallbackCenterBand(in imageSize: CGSize) -> CGRect {
         let bounds = CGRect(origin: .zero, size: imageSize)
-        let width = imageSize.width * 0.94
-        let height = imageSize.height * 0.72
+        let width = imageSize.width * 0.90
+        let height = imageSize.height * 0.46
         let rect = CGRect(
             x: (imageSize.width - width) / 2,
             y: (imageSize.height - height) / 2,
