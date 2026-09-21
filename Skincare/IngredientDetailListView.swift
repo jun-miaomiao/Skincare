@@ -20,6 +20,8 @@ struct IngredientDetailListView: View {
     /// 辨識三態；`nil` 時依目前清單長度推斷。
     var recognitionTier: RecognitionTier? = nil
     var scanSource: ScanSource = .history
+    /// 成分頁改名後通知外層，避免摘要頁用舊的「未命名商品」蓋掉紀錄。
+    var onProductNameChanged: ((String) -> Void)? = nil
 
     @Query private var profileList: [UserProfile]
     @Query(sort: \FavoriteIngredientRecord.createdAt, order: .reverse)
@@ -859,6 +861,7 @@ struct IngredientDetailListView: View {
         let trimmed = renameDraft.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
         editableProductName = trimmed
+        onProductNameChanged?(trimmed)
 
         if let historyRecordID, !historyRecordID.isEmpty {
             ScanHistoryWriter.updateRecordTitle(

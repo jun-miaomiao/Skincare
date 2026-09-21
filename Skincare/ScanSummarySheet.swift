@@ -366,7 +366,10 @@ struct ScanSummarySheet: View {
                         favoriteRecordID: payload.isFromFavorites ? resolvedFavoriteRecordID : nil,
                         storedSnapshots: payload.resolvedIngredients,
                         recognitionTier: payload.recognitionTier,
-                        scanSource: payload.source
+                        scanSource: payload.source,
+                        onProductNameChanged: { updatedName in
+                            customProductName = updatedName
+                        }
                     )
                     .onAppear {
                         syncHistoryTitle()
@@ -641,11 +644,27 @@ struct ScanSummarySheet: View {
 
     private func syncHistoryTitle() {
         guard let recordID = payload.historyRecordID else { return }
+        let proposed = trimmedProductName
+        if isPlaceholderName(proposed),
+           let saved = savedHistoryTitle(recordID: recordID),
+           !isPlaceholderName(saved) {
+            return
+        }
         ScanHistoryWriter.updateRecordTitle(
             recordID: recordID,
-            title: trimmedProductName,
+            title: proposed,
             in: modelContext
         )
+    }
+
+    private func isPlaceholderName(_ name: String) -> Bool {
+        name.trimmingCharacters(in: .whitespacesAndNewlines) == Self.defaultProductName()
+    }
+
+    private func savedHistoryTitle(recordID: String) -> String? {
+        let descriptor = FetchDescriptor<ScanHistoryRecordEntity>()
+        guard let entities = try? modelContext.fetch(descriptor) else { return nil }
+        return entities.first { $0.recordID == recordID }?.title
     }
 
     private func syncFavoriteTitleIfNeeded() {

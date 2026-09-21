@@ -48,33 +48,91 @@ class OCRManager {
 
     func recognize(from image: UIImage, maxLongEdge: CGFloat = OCRManager.maxOCRLongEdge) async -> OCRRecognitionResult {
         let prepared = Self.prepareImageForOCR(image, maxLongEdge: maxLongEdge)
-        guard let cgImage = prepared.cgImage else {
+        guard prepared.cgImage != nil else {
             return OCRRecognitionResult(lines: [])
         }
 
+        let whole = await recognizePrepared(prepared)
+        // 白框是扁的。整框一起認時，密排小字矮於 Vision 預設，常常只剩最後一行。
+        // 橫向重疊切片後每一行變高，行數變多才採用。
+        guard prepared.size.width > prepared.size.height * 1.15 else {
+            return whole
+        }
+        let sliced = await recognizeHorizontalBands(prepared)
+        return sliced.lines.count > whole.lines.count ? sliced : whole
+    }
+
+    private func recognizeHorizontalBands(_ image: UIImage) async -> OCRRecognitionResult {
+        let bandCount = 3
+        let bandHeightRatio: CGFloat = 0.5
+        let step = (1 - bandHeightRatio) / CGFloat(bandCount - 1)
+        var lines: [OCRLineResult] = []
+        var seen = Set<String>()
+
+        for index in 0..<bandCount {
+            let y = image.size.height * step * CGFloat(index)
+            let rect = CGRect(
+                x: 0,
+                y: y,
+                width: image.size.width,
+                height: image.size.height * bandHeightRatio
+            )
+            guard let slice = Self.crop(image, to: rect) else { continue }
+            let prepared = Self.prepareImageForOCR(slice, maxLongEdge: Self.ingredientBandLongEdge)
+            let result = await recognizePrepared(prepared)
+            for line in result.lines {
+                let key = line.text
+                    .trimmingCharacters(in: .whitespacesAndNewlines)
+                    .lowercased(with: Locale(identifier: "en_US_POSIX"))
+                guard key.count >= 2, seen.insert(key).inserted else { continue }
+                lines.append(line)
+            }
+        }
+        return OCRRecognitionResult(lines: lines)
+    }
+
+    private func recognizePrepared(_ image: UIImage) async -> OCRRecognitionResult {
+        guard let cgImage = image.cgImage else {
+            return OCRRecognitionResult(lines: [])
+        }
         let visionCGImage = UIImage.redrawCGImageInSRGB(cgImage) ?? cgImage
 
-        // Run Vision entirely inside a detached task (no completion-handler / queue captures).
-        let cgImageForOCR = visionCGImage
         return await Task.detached(priority: .userInitiated) {
             let request = VNRecognizeTextRequest()
             request.recognitionLevel = .accurate
             request.usesLanguageCorrection = false
             request.recognitionLanguages = ["en-US", "zh-Hant", "ja-JP", "ko-KR"]
+            request.minimumTextHeight = 0.008
 
-            let handler = VNImageRequestHandler(cgImage: cgImageForOCR, options: [:])
+            let handler = VNImageRequestHandler(cgImage: visionCGImage, options: [:])
             do {
                 try handler.perform([request])
             } catch {
                 return OCRRecognitionResult(lines: [])
             }
 
-            let lines: [OCRLineResult] = (request.results ?? []).compactMap { observation in
+            let observations = (request.results ?? []).sorted { lhs, rhs in
+                let dy = lhs.boundingBox.midY - rhs.boundingBox.midY
+                if abs(dy) > 0.012 { return dy > 0 }
+                return lhs.boundingBox.minX < rhs.boundingBox.minX
+            }
+            let lines: [OCRLineResult] = observations.compactMap { observation in
                 guard let candidate = observation.topCandidates(1).first else { return nil }
                 return OCRLineResult(text: candidate.string, confidence: candidate.confidence)
             }
             return OCRRecognitionResult(lines: lines)
         }.value
+    }
+
+    private static func crop(_ image: UIImage, to rect: CGRect) -> UIImage? {
+        guard let cgImage = image.cgImage else { return nil }
+        let bounds = CGRect(x: 0, y: 0, width: cgImage.width, height: cgImage.height)
+        let pixel = rect.integral.intersection(bounds)
+        guard pixel.width >= 32, pixel.height >= 32,
+              let cut = cgImage.cropping(to: pixel) else {
+            return nil
+        }
+        return UIImage(cgImage: cut, scale: 1, orientation: .up)
     }
 
     static func prepareImageForOCR(_ image: UIImage, maxLongEdge: CGFloat = 2000) -> UIImage {
