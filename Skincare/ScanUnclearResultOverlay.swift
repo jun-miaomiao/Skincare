@@ -36,6 +36,7 @@ struct ScanUnclearResultOverlay: View {
         ZStack {
             Color.black.opacity(0.48)
                 .ignoresSafeArea()
+                .contentShape(Rectangle())
                 .onTapGesture(perform: onDismiss)
 
             VStack(spacing: 16) {
@@ -63,7 +64,7 @@ struct ScanUnclearResultOverlay: View {
                             .padding(.vertical, 12)
                             .background(Theme.accent, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.borderless)
                 }
 
                 if let onRetake {
@@ -78,7 +79,7 @@ struct ScanUnclearResultOverlay: View {
                                     .stroke(Color.white.opacity(0.55), lineWidth: 1.5)
                             )
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.borderless)
                 }
 
                 if prompt.showsPartialResults, let onViewPartialResults {
@@ -87,7 +88,7 @@ struct ScanUnclearResultOverlay: View {
                             .font(.caption.weight(.semibold))
                             .foregroundColor(.white.opacity(0.92))
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.borderless)
                 }
 
                 Button(action: onDismiss) {
@@ -95,7 +96,7 @@ struct ScanUnclearResultOverlay: View {
                         .font(.caption.weight(.semibold))
                         .foregroundColor(.white.opacity(0.88))
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.borderless)
                 .padding(.top, 2)
             }
             .padding(22)
@@ -109,6 +110,7 @@ struct ScanUnclearResultOverlay: View {
                     .stroke(Color.white.opacity(0.28), lineWidth: 1)
             )
             .shadow(color: .black.opacity(0.35), radius: 20, y: 8)
+            .contentShape(Rectangle())
             .transition(.scale(scale: 0.9).combined(with: .opacity))
         }
     }

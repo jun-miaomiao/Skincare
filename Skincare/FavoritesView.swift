@@ -53,6 +53,8 @@ struct FavoritesView: View {
     @State private var isCameraPresented = false
     @State private var isPhotoPickerPresented = false
     @State private var isLegacyPhotoLibraryPresented = false
+    @State private var libraryAlignSession: PhotoLibraryAlignSession?
+    @State private var retryLibraryImages: [UIImage] = []
 
     @State private var isScanning = false
     @State private var scanningUsesMultiAngleCopy = false
@@ -223,16 +225,33 @@ struct FavoritesView: View {
                 .fullScreenCover(isPresented: $isLegacyPhotoLibraryPresented) {
                     #if os(iOS)
                     PhotoLibraryPickerView(
-                        cropsToIngredientBand: true,
+                        cropsToIngredientBand: false,
                         onCapture: { data in
                             isLegacyPhotoLibraryPresented = false
-                            Task { await processImages([data]) }
+                            if let image = UIImage(data: data) {
+                                libraryAlignSession = PhotoLibraryAlignSession(images: [image])
+                            }
                         },
                         onCancel: {
                             isLegacyPhotoLibraryPresented = false
                         }
                     )
                     .ignoresSafeArea()
+                    #endif
+                }
+                .fullScreenCover(item: $libraryAlignSession) { session in
+                    #if os(iOS)
+                    PhotoLibraryFrameAlignFlow(
+                        images: session.images,
+                        onComplete: { dataList in
+                            retryLibraryImages = session.images
+                            libraryAlignSession = nil
+                            Task { await processImages(dataList) }
+                        },
+                        onCancel: {
+                            libraryAlignSession = nil
+                        }
+                    )
                     #endif
                 }
                 .onAppear {
@@ -244,8 +263,8 @@ struct FavoritesView: View {
                 .modifier(
                     FavoritesPhotosPickerModifier(
                         isPresented: $isPhotoPickerPresented,
-                        onPickedData: { dataList in
-                            Task { await processImages(dataList) }
+                        onPickedImages: { images in
+                            libraryAlignSession = PhotoLibraryAlignSession(images: images)
                         }
                     )
                 )
@@ -350,6 +369,15 @@ struct FavoritesView: View {
                         showUnclearResult = false
                         pendingFavoriteScan = nil
                         showManualInput = true
+                    },
+                    onRetake: {
+                        showUnclearResult = false
+                        pendingFavoriteScan = nil
+                        if let session = PhotoLibraryAlignSession(images: retryLibraryImages) {
+                            libraryAlignSession = session
+                        } else {
+                            isPhotoPickerPresented = true
+                        }
                     },
                     onViewPartialResults: {
                         showUnclearResult = false
@@ -889,7 +917,7 @@ private struct FavoriteNameSaveSheet: View {
 
 private struct FavoritesPhotosPickerModifier: ViewModifier {
     @Binding var isPresented: Bool
-    let onPickedData: ([Data]) -> Void
+    let onPickedImages: ([UIImage]) -> Void
 
     func body(content: Content) -> some View {
         content
@@ -897,8 +925,7 @@ private struct FavoritesPhotosPickerModifier: ViewModifier {
                 ModernPhotosPickerModifier(
                     isPresented: $isPresented,
                     maxSelectionCount: ModernPhotoLoader.maxSelectionCount,
-                    cropsToIngredientBand: true,
-                    onPickedData: onPickedData
+                    onPickedImages: onPickedImages
                 )
             )
     }
@@ -909,6 +936,8 @@ private struct FavoriteProductsPage: View {
     var isSelecting: Bool = false
     @Binding var selectedRecordIDs: Set<String>
     let onDelete: (IndexSet) -> Void
+
+    @State private var routinePickerRecordID: String?
 
     var body: some View {
         Group {
@@ -946,12 +975,20 @@ private struct FavoriteProductsPage: View {
                                         .allowsHitTesting(false)
                                 }
                                 .contentShape(Rectangle())
+                                .onLongPressGesture(minimumDuration: 0.45) {
+                                    routinePickerRecordID = record.recordID
+                                }
                                 .swipeActions(edge: .trailing, allowsFullSwipe: true) {
                                     Button(role: .destructive) {
                                         deleteRecord(record)
                                     } label: {
-                                        CenteredSwipeActionLabel(title: "刪除", systemImage: "trash")
+                                        CircularSwipeActionLabel(
+                                            title: "刪除",
+                                            systemImage: "trash",
+                                            tint: .red
+                                        )
                                     }
+                                    .tint(.clear)
                                 }
                             }
                         }
@@ -968,8 +1005,48 @@ private struct FavoriteProductsPage: View {
                         Color.clear.frame(height: 72)
                     }
                 }
+                .confirmationDialog(
+                    "設定使用時段",
+                    isPresented: routinePickerPresented,
+                    titleVisibility: .visible
+                ) {
+                    Button("早上") {
+                        setRoutineSlot("morning")
+                    }
+                    Button("晚上") {
+                        setRoutineSlot("evening")
+                    }
+                    if let record = routinePickerRecord, record.routineSlotBadgeText != nil {
+                        Button("清除時段", role: .destructive) {
+                            setRoutineSlot("")
+                        }
+                    }
+                    Button("取消", role: .cancel) {
+                        routinePickerRecordID = nil
+                    }
+                } message: {
+                    Text("標記此保養品用於早上或晚上保養")
+                }
             }
         }
+    }
+
+    private var routinePickerPresented: Binding<Bool> {
+        Binding(
+            get: { routinePickerRecordID != nil },
+            set: { if !$0 { routinePickerRecordID = nil } }
+        )
+    }
+
+    private var routinePickerRecord: FavoriteProductRecord? {
+        guard let id = routinePickerRecordID else { return nil }
+        return records.first { $0.recordID == id }
+    }
+
+    private func setRoutineSlot(_ raw: String) {
+        guard let record = routinePickerRecord else { return }
+        record.routineSlotRaw = raw
+        routinePickerRecordID = nil
     }
 
     private func toggleSelection(_ id: String) {
@@ -1032,8 +1109,13 @@ private struct FavoriteIngredientsPage: View {
                                         Button(role: .destructive) {
                                             deleteRecord(record)
                                         } label: {
-                                            CenteredSwipeActionLabel(title: "刪除", systemImage: "trash")
+                                            CircularSwipeActionLabel(
+                                                title: "刪除",
+                                                systemImage: "trash",
+                                                tint: .red
+                                            )
                                         }
+                                        .tint(.clear)
                                     }
                                 }
                             }
@@ -1106,14 +1188,7 @@ private struct CompactFavoriteProductCard: View {
             }
 
             HStack(alignment: .top, spacing: 16) {
-                Image(systemName: record.hasAvoidWarnings ? "exclamationmark.triangle.fill" : "star.fill")
-                    .font(.body.weight(.semibold))
-                    .foregroundColor(record.hasAvoidWarnings ? .white : accent)
-                    .frame(width: 48, height: 48)
-                    .background(
-                        record.hasAvoidWarnings ? Theme.blush : accent.opacity(0.16),
-                        in: RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    )
+                leadingBadge
 
                 VStack(alignment: .leading, spacing: 8) {
                     Text(record.name)
@@ -1150,6 +1225,34 @@ private struct CompactFavoriteProductCard: View {
             )
             .shadow(color: accent.opacity(0.12), radius: 18, y: 10)
         }
+    }
+
+    /// 左側 48×48 方框保留；未設時段顯示星星／警示，已設則顯示「早」或「晚」。
+    private var leadingBadge: some View {
+        let warning = record.hasAvoidWarnings
+        return ZStack {
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .fill(warning ? Theme.blush : accent.opacity(0.16))
+
+            if let slot = record.routineSlotBadgeText {
+                Text(slot)
+                    .font(.system(size: 20, weight: .bold, design: .rounded))
+                    .foregroundColor(warning ? .white : accent)
+            } else {
+                Image(systemName: warning ? "exclamationmark.triangle.fill" : "star.fill")
+                    .font(.body.weight(.semibold))
+                    .foregroundColor(warning ? .white : accent)
+            }
+        }
+        .frame(width: 48, height: 48)
+        .accessibilityLabel(leadingAccessibilityLabel)
+    }
+
+    private var leadingAccessibilityLabel: String {
+        if let slot = record.routineSlotBadgeText {
+            return slot == "早" ? "早上保養" : "晚上保養"
+        }
+        return record.hasAvoidWarnings ? "含風險成分" : "最愛保養品"
     }
 }
 

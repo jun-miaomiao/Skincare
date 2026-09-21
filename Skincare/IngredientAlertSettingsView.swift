@@ -3,8 +3,12 @@ import SwiftUI
 
 struct IngredientAlertSettingsView: View {
     @Bindable var profile: UserProfile
+    @EnvironmentObject private var subscriptionStore: SubscriptionStore
 
     @State private var batchInputText = ""
+    @State private var showPaywall = false
+
+    private var canEditCustom: Bool { subscriptionStore.isPremium }
 
     var body: some View {
         ZStack {
@@ -24,6 +28,9 @@ struct IngredientAlertSettingsView: View {
         }
         .navigationTitle("成分提醒")
         .navigationBarTitleDisplayMode(.inline)
+        .sheet(isPresented: $showPaywall) {
+            PaywallView(reason: .customRisk)
+        }
     }
 
     private var introCard: some View {
@@ -101,14 +108,52 @@ struct IngredientAlertSettingsView: View {
 
     private var customBlockedSection: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Text("自訂風險成分")
-                .font(.system(.headline, design: .serif))
-                .foregroundColor(Theme.ink)
+            HStack(alignment: .center, spacing: 8) {
+                Text("自訂風險成分")
+                    .font(.system(.headline, design: .serif))
+                    .foregroundColor(Theme.ink)
 
-            Text("可快捷加入常用敏感庫，或以逗號、頓號、換行批次貼上成分名稱。")
-                .font(.caption)
-                .foregroundColor(Theme.muted)
-                .fixedSize(horizontal: false, vertical: true)
+                Spacer(minLength: 8)
+
+                if !canEditCustom {
+                    Label("訂閱", systemImage: "lock.fill")
+                        .font(.caption.weight(.semibold))
+                        .foregroundColor(Theme.accent)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 5)
+                        .background(Theme.accent.opacity(0.12), in: Capsule())
+                }
+            }
+
+            Text(
+                canEditCustom
+                    ? "可快捷加入常用敏感庫，或以逗號、頓號、換行批次貼上成分名稱。"
+                    : "可查看已加入的清單；新增、刪除與快捷庫需訂閱後才能編輯。"
+            )
+            .font(.caption)
+            .foregroundColor(Theme.muted)
+            .fixedSize(horizontal: false, vertical: true)
+
+            if !canEditCustom {
+                Button {
+                    showPaywall = true
+                } label: {
+                    HStack(spacing: 10) {
+                        Image(systemName: "lock.open.fill")
+                            .font(.subheadline.weight(.semibold))
+                        Text("解鎖自訂風險成分")
+                            .font(.subheadline.weight(.semibold))
+                        Spacer(minLength: 0)
+                        Image(systemName: "chevron.right")
+                            .font(.caption.weight(.semibold))
+                            .foregroundColor(Theme.muted)
+                    }
+                    .foregroundColor(Theme.accent)
+                    .padding(14)
+                    .background(Theme.accent.opacity(0.10), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                }
+                .buttonStyle(.plain)
+            }
 
             quickAddSection
             batchInputSection
@@ -134,10 +179,18 @@ struct IngredientAlertSettingsView: View {
                     QuickAddPackCapsule(
                         title: pack.title,
                         isFullyAdded: profile.isQuickPackFullyAdded(pack),
-                        onAdd: { profile.addQuickPack(pack) }
+                        isLocked: !canEditCustom,
+                        onAdd: {
+                            guard canEditCustom else {
+                                showPaywall = true
+                                return
+                            }
+                            profile.addQuickPack(pack)
+                        }
                     )
                 }
             }
+            .opacity(canEditCustom ? 1 : 0.55)
         }
     }
 
@@ -158,10 +211,18 @@ struct IngredientAlertSettingsView: View {
                     RoundedRectangle(cornerRadius: 14, style: .continuous)
                         .stroke(Theme.cardStroke, lineWidth: 1)
                 )
+                .disabled(!canEditCustom)
+                .opacity(canEditCustom ? 1 : 0.55)
                 .onSubmit { commitBatchInput() }
 
             HStack(spacing: 10) {
-                Button(action: commitBatchInput) {
+                Button {
+                    guard canEditCustom else {
+                        showPaywall = true
+                        return
+                    }
+                    commitBatchInput()
+                } label: {
                     Text("批次新增")
                         .font(.caption.weight(.semibold))
                         .foregroundColor(.white)
@@ -170,11 +231,18 @@ struct IngredientAlertSettingsView: View {
                         .background(Theme.accent, in: Capsule())
                 }
                 .buttonStyle(.plain)
-                .disabled(batchInputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                .disabled(canEditCustom && batchInputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                .opacity(canEditCustom ? 1 : 0.55)
 
                 Spacer(minLength: 8)
 
-                Button(action: clearAllCustomBlocked) {
+                Button {
+                    guard canEditCustom else {
+                        showPaywall = true
+                        return
+                    }
+                    clearAllCustomBlocked()
+                } label: {
                     Text("全部取消")
                         .font(.caption.weight(.semibold))
                         .foregroundColor(Theme.blush)
@@ -187,8 +255,8 @@ struct IngredientAlertSettingsView: View {
                         )
                 }
                 .buttonStyle(.plain)
-                .disabled(profile.customBlockedIngredients.isEmpty)
-                .opacity(profile.customBlockedIngredients.isEmpty ? 0.45 : 1)
+                .disabled(canEditCustom && profile.customBlockedIngredients.isEmpty)
+                .opacity((!canEditCustom || profile.customBlockedIngredients.isEmpty) ? 0.45 : 1)
                 .accessibilityLabel("全部取消自訂風險成分")
             }
         }
@@ -208,13 +276,29 @@ struct IngredientAlertSettingsView: View {
             } else {
                 FlowLayout(spacing: 8) {
                     ForEach(profile.customBlockedIngredients, id: \.self) { ingredient in
-                        RemovableIngredientTag(name: ingredient) {
-                            profile.removeCustomBlockedIngredient(ingredient)
-                        }
+                        RemovableIngredientTag(
+                            name: ingredient,
+                            isLocked: !canEditCustom,
+                            onRemove: {
+                                guard canEditCustom else {
+                                    showPaywall = true
+                                    return
+                                }
+                                profile.removeCustomBlockedIngredient(ingredient)
+                            }
+                        )
                     }
                 }
             }
         }
+    }
+
+    private func requireCustomEditAccess() -> Bool {
+        guard canEditCustom else {
+            showPaywall = true
+            return false
+        }
+        return true
     }
 
     private var scanBehaviorNote: some View {
@@ -240,6 +324,7 @@ struct IngredientAlertSettingsView: View {
     }
 
     private func commitBatchInput() {
+        guard requireCustomEditAccess() else { return }
         let parsed = IngredientMatcher.parseBatchInput(batchInputText)
         guard !parsed.isEmpty else { return }
         profile.addCustomBlockedIngredients(parsed)
@@ -247,6 +332,7 @@ struct IngredientAlertSettingsView: View {
     }
 
     private func clearAllCustomBlocked() {
+        guard requireCustomEditAccess() else { return }
         profile.customBlockedIngredients = []
     }
 }
@@ -276,6 +362,7 @@ private struct AvoidIngredientToggleRow: View {
 private struct QuickAddPackCapsule: View {
     let title: String
     let isFullyAdded: Bool
+    var isLocked: Bool = false
     let onAdd: () -> Void
 
     var body: some View {
@@ -283,28 +370,32 @@ private struct QuickAddPackCapsule: View {
             HStack(spacing: 6) {
                 Text(title)
                     .font(.caption.weight(.semibold))
-                Image(systemName: isFullyAdded ? "checkmark" : "plus")
+                Image(systemName: isLocked ? "lock.fill" : (isFullyAdded ? "checkmark" : "plus"))
                     .font(.caption2.weight(.bold))
             }
-            .foregroundColor(isFullyAdded ? Theme.sage : Theme.accent)
+            .foregroundColor(isFullyAdded && !isLocked ? Theme.sage : Theme.accent)
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
             .background(
-                isFullyAdded ? Theme.sage.opacity(0.14) : Theme.accent.opacity(0.10),
+                isFullyAdded && !isLocked ? Theme.sage.opacity(0.14) : Theme.accent.opacity(0.10),
                 in: Capsule()
             )
             .overlay(
                 Capsule()
-                    .stroke(isFullyAdded ? Theme.sage.opacity(0.35) : Theme.cardStroke, lineWidth: 1)
+                    .stroke(
+                        isFullyAdded && !isLocked ? Theme.sage.opacity(0.35) : Theme.cardStroke,
+                        lineWidth: 1
+                    )
             )
         }
         .buttonStyle(.plain)
-        .disabled(isFullyAdded)
+        .disabled(isFullyAdded && !isLocked)
     }
 }
 
 private struct RemovableIngredientTag: View {
     let name: String
+    var isLocked: Bool = false
     let onRemove: () -> Void
 
     var body: some View {
@@ -314,7 +405,7 @@ private struct RemovableIngredientTag: View {
                     .font(.caption.weight(.semibold))
                     .lineLimit(1)
 
-                Image(systemName: "xmark.circle.fill")
+                Image(systemName: isLocked ? "lock.fill" : "xmark.circle.fill")
                     .font(.caption)
                     .foregroundColor(Theme.muted)
             }
@@ -326,8 +417,8 @@ private struct RemovableIngredientTag: View {
             .contentShape(Capsule())
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("取消 \(name)")
-        .accessibilityHint("點一下即可從此清單移除")
+        .accessibilityLabel(isLocked ? "\(name)（訂閱後可編輯）" : "取消 \(name)")
+        .accessibilityHint(isLocked ? "需訂閱才能編輯自訂風險成分" : "點一下即可從此清單移除")
     }
 }
 
@@ -416,6 +507,7 @@ struct IngredientAlertSettingsView_Previews: PreviewProvider {
         CustomNavigationView {
             IngredientAlertSettingsView(profile: UserProfile())
         }
+        .environmentObject(SubscriptionStore.shared)
         .modelContainer(SkincareModelContainer.preview)
     }
 }

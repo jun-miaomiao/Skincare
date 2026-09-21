@@ -33,6 +33,9 @@ private struct CameraViewIOS: View {
     @State private var showPhotoLibraryPicker = false
     @State private var scannedImageData: Data?
     @State private var showPhotosPicker = false
+    @State private var libraryAlignSession: PhotoLibraryAlignSession?
+    /// 相簿對框失敗時，「重拍」可回到同一組圖再對齊。
+    @State private var retryLibraryImages: [UIImage] = []
     @State private var isScanning = false
     /// 多張相簿選取時顯示「正在分析多角度圖片...」
     @State private var scanningUsesMultiAngleCopy = false
@@ -63,11 +66,23 @@ private struct CameraViewIOS: View {
             .modifier(ModernPhotosPickerModifier(
                 isPresented: $showPhotosPicker,
                 maxSelectionCount: ModernPhotoLoader.maxSelectionCount,
-                cropsToIngredientBand: true,
-                onPickedData: { dataList in
-                    Task { await processImagesForAlerts(dataList: dataList, fromIngredientBand: true) }
+                onPickedImages: { images in
+                    libraryAlignSession = PhotoLibraryAlignSession(images: images)
                 }
             ))
+            .fullScreenCover(item: $libraryAlignSession) { session in
+                PhotoLibraryFrameAlignFlow(
+                    images: session.images,
+                    onComplete: { dataList in
+                        retryLibraryImages = session.images
+                        libraryAlignSession = nil
+                        Task { await processImagesForAlerts(dataList: dataList, fromIngredientBand: true) }
+                    },
+                    onCancel: {
+                        libraryAlignSession = nil
+                    }
+                )
+            }
             .onAppear {
                 DataBootstrap.seedIfNeeded(in: modelContext)
                 if isActive {
@@ -116,7 +131,7 @@ private struct CameraViewIOS: View {
             }
 
             // 白框／提示層會擋住 UIView 點擊；用 SwiftUI 手勢承接對焦。
-            if camera.isConfigured, !camera.isCameraUnavailable, !isScanning {
+            if camera.isConfigured, !camera.isCameraUnavailable, !isScanning, !showUnclearResult, !showAvoidAlert {
                 CameraTapFocusLayer(
                     onFocus: { camera.focus(atDevicePoint: $0) },
                     indicatorPoint: $focusIndicatorPoint
@@ -200,6 +215,9 @@ private struct CameraViewIOS: View {
                         clearDeferredLowQuality()
                         latestScanPayload = nil
                         resetCapturedImages()
+                        if let session = PhotoLibraryAlignSession(images: retryLibraryImages) {
+                            libraryAlignSession = session
+                        }
                     },
                     onViewPartialResults: {
                         showUnclearResult = false
@@ -252,10 +270,12 @@ private struct CameraViewIOS: View {
         }
         .fullScreenCover(isPresented: $showPhotoLibraryPicker) {
             PhotoLibraryPickerView(
-                cropsToIngredientBand: true,
+                cropsToIngredientBand: false,
                 onCapture: { data in
                     showPhotoLibraryPicker = false
-                    Task { await processImagesForAlerts(dataList: [data], fromIngredientBand: true) }
+                    if let image = UIImage(data: data) {
+                        libraryAlignSession = PhotoLibraryAlignSession(images: [image])
+                    }
                 },
                 onCancel: {
                     showPhotoLibraryPicker = false

@@ -236,6 +236,16 @@ struct SensitiveIngredientQuickPack: Identifiable {
                 "Dimethicone", "Cyclopentasiloxane", "Cyclohexasiloxane",
                 "Dimethiconol", "聚二甲基矽氧烷", "環五聚二甲基矽氧烷"
             ]
+        ),
+        SensitiveIngredientQuickPack(
+            id: "retinoid-family",
+            title: "A酸／視黃醇系列",
+            ingredients: [
+                "Retinol", "Retinal", "Retinaldehyde", "Retinoic Acid",
+                "Tretinoin", "Adapalene", "Hydroxypinacolone Retinoate",
+                "Retinyl Palmitate", "Retinyl Acetate",
+                "視黃醇", "視黃醛", "視黃酸", "A醇", "A醛", "A酸", "維A酸"
+            ]
         )
     ]
 }
@@ -258,6 +268,8 @@ final class FavoriteProductRecord {
     var customBlockedIngredientsRaw: String = "[]"
     var resolvedIngredientsRaw: String = "[]"
     var ingredientCount: Int = 0
+    /// 保養時段：`morning` / `evening`；空字串＝未設定（仍顯示星星）。
+    var routineSlotRaw: String = ""
     var createdAt: Date = Date()
 
     init(
@@ -276,7 +288,8 @@ final class FavoriteProductRecord {
         blockedTagsRaw: String = "[]",
         customBlockedIngredientsRaw: String = "[]",
         resolvedIngredientsRaw: String = "[]",
-        ingredientCount: Int = 0
+        ingredientCount: Int = 0,
+        routineSlotRaw: String = ""
     ) {
         self.recordID = recordID
         self.brand = brand
@@ -294,6 +307,7 @@ final class FavoriteProductRecord {
         self.customBlockedIngredientsRaw = customBlockedIngredientsRaw
         self.resolvedIngredientsRaw = resolvedIngredientsRaw
         self.ingredientCount = ingredientCount
+        self.routineSlotRaw = routineSlotRaw
         self.createdAt = Date()
     }
 
@@ -320,6 +334,15 @@ final class FavoriteProductRecord {
 
     var hasAvoidWarnings: Bool {
         !matchedIngredients.isEmpty
+    }
+
+    /// 最愛列表左側徽章：未設定時為星星；已設定顯示「早」或「晚」。
+    var routineSlotBadgeText: String? {
+        switch routineSlotRaw {
+        case "morning": return "早"
+        case "evening": return "晚"
+        default: return nil
+        }
     }
 
     var displayIngredientCount: Int {

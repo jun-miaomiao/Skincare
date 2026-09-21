@@ -421,8 +421,13 @@ struct IngredientDetailListView: View {
                         guard let index = items.firstIndex(where: { $0.id == item.id }) else { return }
                         onDelete(IndexSet(integer: index))
                     } label: {
-                        CenteredSwipeActionLabel(title: "刪除", systemImage: "trash")
+                        CircularSwipeActionLabel(
+                            title: "刪除",
+                            systemImage: "trash",
+                            tint: .red
+                        )
                     }
+                    .tint(.clear)
                 }
         }
     }
@@ -449,12 +454,13 @@ struct IngredientDetailListView: View {
                 }
                 addIngredientToFavorites(item)
             } label: {
-                CenteredSwipeActionLabel(
+                CircularSwipeActionLabel(
                     title: "最愛",
-                    systemImage: subscriptionStore.isPremium ? "star.fill" : "lock.fill"
+                    systemImage: subscriptionStore.isPremium ? "star" : "lock",
+                    tint: .orange
                 )
             }
-            .tint(.orange)
+            .tint(.clear)
             .disabled(isIngredientAlreadyFavorited(item))
         }
         .listRowInsets(EdgeInsets(top: 5, leading: 18, bottom: 5, trailing: 18))

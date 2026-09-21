@@ -72,6 +72,7 @@ struct PaywallView: View {
         VStack(alignment: .leading, spacing: 10) {
             benefitRow("無限相機／相簿掃描", systemImage: "camera.fill")
             benefitRow("加入最愛保養品與保養成分", systemImage: "star.fill")
+            benefitRow("自訂風險成分清單", systemImage: "exclamationmark.shield.fill")
             benefitRow("規劃中：韓日文辨識與字典翻譯完善", systemImage: "globe.asia.australia.fill")
         }
         .padding(14)
@@ -272,6 +273,7 @@ enum PaywallReason: Equatable {
     case generic
     case weeklyScanLimit
     case favorites
+    case customRisk
 
     var title: String {
         switch self {
@@ -281,6 +283,8 @@ enum PaywallReason: Equatable {
             return "本週免費掃描已用完"
         case .favorites:
             return "最愛是訂閱功能"
+        case .customRisk:
+            return "自訂風險是訂閱功能"
         }
     }
 
@@ -292,6 +296,8 @@ enum PaywallReason: Equatable {
             return "免費每週 \(FreeScanQuota.weeklyCameraScanLimit) 次相機／相簿掃描。貼上成分解析不限次數。"
         case .favorites:
             return "掃完結果都能看。加入最愛、之後快速回看，需訂閱解鎖。"
+        case .customRisk:
+            return "大分類風險開關仍可免費使用。自訂成分清單的新增與刪除需訂閱。"
         }
     }
 }

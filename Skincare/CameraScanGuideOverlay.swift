@@ -80,7 +80,7 @@ struct CameraScanGuideOverlay: View {
 }
 
 /// 四角括號，強調「只框成分表那一塊」。
-private struct IngredientBandCornerFrame: Shape {
+struct IngredientBandCornerFrame: Shape {
     var cornerLengthRatio: CGFloat = 0.18
     var cornerRadius: CGFloat = 14
 

@@ -218,7 +218,7 @@ private struct ProfileFormContent: View {
                         Text("成分提醒")
                             .font(.headline)
                             .foregroundColor(Theme.ink)
-                        Text("自訂風險成分與掃描警報")
+                        Text("風險開關免費；自訂清單需訂閱")
                             .font(.caption)
                             .foregroundColor(Theme.muted)
                     }
