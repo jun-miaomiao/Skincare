@@ -51,8 +51,12 @@ private struct CameraViewIOS: View {
     @State private var showUnclearResult = false
     /// 保留首張結果，進入連續補拍模式。
     @State private var isFollowUpCaptureMode = false
-    /// 圓瓶連拍暫存（上限 3 張）；快門只入列，不立即關閉相機。
+    /// 圓瓶連拍暫存（上限 3 張）；每張先對框確認才入列。
     @State private var capturedImages: [UIImage] = []
+    /// 對框後的裁切，辨識直接用這份，不再用實機預覽重裁。
+    @State private var confirmedCrops: [Data] = []
+    /// 剛拍下、等使用者拖進白框的那張。
+    @State private var shotPendingAlign: UIImage?
     @State private var isCapturingShot = false
     @State private var isFinishingMultiShot = false
     @State private var cameraPreviewSize: CGSize = .zero
@@ -201,6 +205,24 @@ private struct CameraViewIOS: View {
                         resetCapturedImages()
                     }
                 )
+            }
+
+            if let pending = shotPendingAlign {
+                PhotoLibraryFrameAlignView(
+                    image: pending,
+                    stepLabel: isFollowUpCaptureMode
+                        ? "補拍"
+                        : "\(confirmedCrops.count + 1)/\(MultiShotCaptureGuide.maxShotCount)",
+                    confirmTitle: "確認這張",
+                    onConfirm: { data in
+                        acceptAlignedShot(data)
+                    },
+                    onCancel: {
+                        shotPendingAlign = nil
+                    }
+                )
+                .ignoresSafeArea()
+                .zIndex(30)
             }
 
             if showUnclearResult {
@@ -420,7 +442,7 @@ private struct CameraViewIOS: View {
                 MultiShotCaptureBar(
                     capturedCount: capturedImages.count,
                     isConfigured: camera.isConfigured,
-                    isBusy: isScanning || isCapturingShot || isFinishingMultiShot,
+                    isBusy: isScanning || isCapturingShot || isFinishingMultiShot || shotPendingAlign != nil,
                     showsLibrary: true,
                     onLibrary: openPhotoLibrary,
                     onReset: resetCapturedImages,
@@ -434,7 +456,7 @@ private struct CameraViewIOS: View {
     }
 
     private func capturePhoto() {
-        guard camera.isConfigured, !isScanning, !isCapturingShot else { return }
+        guard camera.isConfigured, !isScanning, !isCapturingShot, shotPendingAlign == nil else { return }
         if !isFollowUpCaptureMode,
            capturedImages.count >= MultiShotCaptureGuide.maxShotCount {
             return
@@ -449,28 +471,27 @@ private struct CameraViewIOS: View {
             isCapturingShot = false
             guard let data else { return }
             Task { @MainActor in
-                if isFollowUpCaptureMode {
-                    let cropped = IngredientBandPreprocessor.jpegDataForCameraOCR(
-                        imageData: data,
-                        previewSize: cameraPreviewSize
-                    ) ?? data
-                    await processFollowUpCapture(data: cropped)
-                } else {
-                    appendCapturedShot(data: data)
-                }
+                guard let image = UIImage(data: data) else { return }
+                shotPendingAlign = image.flattenedForOCR()
             }
         }
     }
 
     @MainActor
-    private func appendCapturedShot(data: Data) {
-        guard capturedImages.count < MultiShotCaptureGuide.maxShotCount else { return }
+    private func acceptAlignedShot(_ data: Data) {
+        shotPendingAlign = nil
         guard let image = UIImage(data: data) else { return }
+        if isFollowUpCaptureMode {
+            Task { await processFollowUpCapture(data: data) }
+            return
+        }
+        guard confirmedCrops.count < MultiShotCaptureGuide.maxShotCount else { return }
         withAnimation(.easeOut(duration: 0.22)) {
+            confirmedCrops.append(data)
             capturedImages.append(image)
         }
         UIImpactFeedbackGenerator(style: .light).impactOccurred()
-        if capturedImages.count >= MultiShotCaptureGuide.maxShotCount {
+        if confirmedCrops.count >= MultiShotCaptureGuide.maxShotCount {
             Task { await finishMultiShotCapture() }
         }
     }
@@ -481,12 +502,7 @@ private struct CameraViewIOS: View {
         guard ensureCameraScanAllowed() else { return }
         isFinishingMultiShot = true
         defer { isFinishingMultiShot = false }
-        let dataList = capturedImages.compactMap {
-            IngredientBandPreprocessor.jpegDataForCameraOCR(
-                $0,
-                previewSize: cameraPreviewSize
-            )
-        }
+        let dataList = confirmedCrops
         guard !dataList.isEmpty else { return }
         await processImagesForAlerts(dataList: dataList, fromIngredientBand: true)
         if latestScanPayload != nil {
@@ -495,9 +511,11 @@ private struct CameraViewIOS: View {
     }
 
     private func resetCapturedImages() {
-        guard !capturedImages.isEmpty else { return }
+        shotPendingAlign = nil
+        guard !capturedImages.isEmpty || !confirmedCrops.isEmpty else { return }
         withAnimation(.easeOut(duration: 0.22)) {
             capturedImages = []
+            confirmedCrops = []
         }
     }
 

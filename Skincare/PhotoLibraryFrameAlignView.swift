@@ -57,6 +57,7 @@ struct PhotoLibraryFrameAlignFlow: View {
 struct PhotoLibraryFrameAlignView: View {
     let image: UIImage
     var stepLabel: String? = nil
+    var confirmTitle: String = "開始辨識"
     let onConfirm: (Data) -> Void
     let onCancel: () -> Void
 
@@ -130,12 +131,17 @@ struct PhotoLibraryFrameAlignView: View {
                     Button {
                         confirmCrop()
                     } label: {
-                        Text("開始辨識")
-                            .font(.headline.weight(.semibold))
-                            .foregroundColor(.white)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 16)
-                            .background(Theme.accent, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                        HStack(spacing: 8) {
+                            if confirmTitle != "開始辨識" {
+                                Image(systemName: "checkmark.circle.fill")
+                            }
+                            Text(confirmTitle)
+                        }
+                        .font(.headline.weight(.semibold))
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 16)
+                        .background(Theme.accent, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
                     }
                     .buttonStyle(.plain)
                     .padding(.horizontal, 22)

@@ -155,6 +155,8 @@ struct MultiShotCaptureBar: View {
 
             shutterButton
 
+            shotChecks
+
             Spacer(minLength: 8)
 
             rightSlot
@@ -209,6 +211,18 @@ struct MultiShotCaptureBar: View {
                 .frame(width: 52, height: 52)
                 .allowsHitTesting(false)
         }
+    }
+
+    private var shotChecks: some View {
+        VStack(spacing: 8) {
+            ForEach(0..<MultiShotCaptureGuide.maxShotCount, id: \.self) { index in
+                Image(systemName: index < capturedCount ? "checkmark.circle.fill" : "circle")
+                    .font(.title3.weight(.semibold))
+                    .foregroundColor(index < capturedCount ? .white : .white.opacity(0.35))
+                    .accessibilityLabel(index < capturedCount ? "第 \(index + 1) 張已確認" : "第 \(index + 1) 張尚未拍攝")
+            }
+        }
+        .frame(width: 28)
     }
 
     private var shutterButton: some View {

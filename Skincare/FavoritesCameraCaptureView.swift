@@ -19,6 +19,8 @@ struct FavoritesCameraCaptureView: View {
     @State private var isScanning = false
     @State private var showUnclearResult = false
     @State private var capturedImages: [UIImage] = []
+    @State private var confirmedCrops: [Data] = []
+    @State private var shotPendingAlign: UIImage?
     @State private var isCapturingShot = false
     @State private var isFinishingMultiShot = false
     @State private var cameraPreviewSize: CGSize = .zero
@@ -105,7 +107,7 @@ struct FavoritesCameraCaptureView: View {
                 MultiShotCaptureBar(
                     capturedCount: capturedImages.count,
                     isConfigured: camera.isConfigured,
-                    isBusy: isScanning || isCapturingShot || isFinishingMultiShot,
+                    isBusy: isScanning || isCapturingShot || isFinishingMultiShot || shotPendingAlign != nil,
                     showsLibrary: false,
                     onLibrary: {},
                     onReset: resetCapturedImages,
@@ -118,6 +120,22 @@ struct FavoritesCameraCaptureView: View {
                 .padding(.bottom, 36)
             }
             .animation(.easeOut(duration: 0.22), value: capturedImages.count)
+
+            if let pending = shotPendingAlign {
+                PhotoLibraryFrameAlignView(
+                    image: pending,
+                    stepLabel: "\(confirmedCrops.count + 1)/\(MultiShotCaptureGuide.maxShotCount)",
+                    confirmTitle: "確認這張",
+                    onConfirm: { data in
+                        acceptAlignedShot(data)
+                    },
+                    onCancel: {
+                        shotPendingAlign = nil
+                    }
+                )
+                .ignoresSafeArea()
+                .zIndex(30)
+            }
 
             if isScanning {
                 ZStack {
@@ -190,42 +208,40 @@ struct FavoritesCameraCaptureView: View {
     }
 
     private func capturePhoto() {
-        guard camera.isConfigured, !isScanning, !isCapturingShot else { return }
+        guard camera.isConfigured, !isScanning, !isCapturingShot, shotPendingAlign == nil else { return }
         guard capturedImages.count < MultiShotCaptureGuide.maxShotCount else { return }
         isCapturingShot = true
         camera.capturePhoto { data in
             isCapturingShot = false
             guard let data else { return }
             Task { @MainActor in
-                appendCapturedShot(data: data)
+                guard let image = UIImage(data: data) else { return }
+                shotPendingAlign = image.flattenedForOCR()
             }
         }
     }
 
     @MainActor
-    private func appendCapturedShot(data: Data) {
-        guard capturedImages.count < MultiShotCaptureGuide.maxShotCount else { return }
+    private func acceptAlignedShot(_ data: Data) {
+        shotPendingAlign = nil
+        guard confirmedCrops.count < MultiShotCaptureGuide.maxShotCount else { return }
         guard let image = UIImage(data: data) else { return }
         withAnimation(.easeOut(duration: 0.22)) {
+            confirmedCrops.append(data)
             capturedImages.append(image)
         }
         UIImpactFeedbackGenerator(style: .light).impactOccurred()
-        if capturedImages.count >= MultiShotCaptureGuide.maxShotCount {
+        if confirmedCrops.count >= MultiShotCaptureGuide.maxShotCount {
             Task { await finishMultiShotCapture() }
         }
     }
 
     @MainActor
     private func finishMultiShotCapture() async {
-        guard !isScanning, !isFinishingMultiShot, capturedImages.count >= 1 else { return }
+        guard !isScanning, !isFinishingMultiShot, confirmedCrops.count >= 1 else { return }
         isFinishingMultiShot = true
         defer { isFinishingMultiShot = false }
-        let dataList = capturedImages.compactMap {
-            IngredientBandPreprocessor.jpegDataForCameraOCR(
-                $0,
-                previewSize: cameraPreviewSize
-            )
-        }
+        let dataList = confirmedCrops
         guard !dataList.isEmpty else { return }
         await process(dataList: dataList)
         if !showUnclearResult {
@@ -234,9 +250,11 @@ struct FavoritesCameraCaptureView: View {
     }
 
     private func resetCapturedImages() {
-        guard !capturedImages.isEmpty else { return }
+        shotPendingAlign = nil
+        guard !capturedImages.isEmpty || !confirmedCrops.isEmpty else { return }
         withAnimation(.easeOut(duration: 0.22)) {
             capturedImages = []
+            confirmedCrops = []
         }
     }
 
