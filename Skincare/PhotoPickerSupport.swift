@@ -207,7 +207,9 @@ struct ModernPhotosPickerModifier: ViewModifier {
     @Binding var isPresented: Bool
     var maxSelectionCount: Int = ModernPhotoLoader.maxSelectionCount
     var cropsToIngredientBand: Bool = false
-    var onPickedData: ([Data]) -> Void
+    /// 若提供：回傳記憶體 UIImage，由外層白框對齊後再 OCR（不自動裁中央）。
+    var onPickedImages: (([UIImage]) -> Void)? = nil
+    var onPickedData: ([Data]) -> Void = { _ in }
 
     func body(content: Content) -> some View {
         content
@@ -216,13 +218,19 @@ struct ModernPhotosPickerModifier: ViewModifier {
                 InMemoryPHPickerView(
                     maxSelectionCount: maxSelectionCount,
                     onPickedImages: { images in
-                        let dataList = ModernPhotoLoader.jpegDataList(
-                            from: images,
-                            cropsToIngredientBand: cropsToIngredientBand
-                        )
                         isPresented = false
-                        if !dataList.isEmpty {
-                            onPickedData(dataList)
+                        if let onPickedImages {
+                            if !images.isEmpty {
+                                onPickedImages(images)
+                            }
+                        } else {
+                            let dataList = ModernPhotoLoader.jpegDataList(
+                                from: images,
+                                cropsToIngredientBand: cropsToIngredientBand
+                            )
+                            if !dataList.isEmpty {
+                                onPickedData(dataList)
+                            }
                         }
                     },
                     onCancel: {

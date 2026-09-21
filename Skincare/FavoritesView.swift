@@ -1,5 +1,8 @@
 import SwiftUI
 import SwiftData
+#if os(iOS)
+import UIKit
+#endif
 
 /// 掃描完成後推入成分資訊用的導航值（Hashable + 預先算好顯示參數）。
 private struct FavoriteScanDetailRoute: Identifiable, Hashable {
@@ -50,6 +53,8 @@ struct FavoritesView: View {
     @State private var isCameraPresented = false
     @State private var isPhotoPickerPresented = false
     @State private var isLegacyPhotoLibraryPresented = false
+    @State private var libraryAlignImages: [UIImage] = []
+    @State private var showLibraryFrameAlign = false
 
     @State private var isScanning = false
     @State private var scanningUsesMultiAngleCopy = false
@@ -220,16 +225,35 @@ struct FavoritesView: View {
                 .fullScreenCover(isPresented: $isLegacyPhotoLibraryPresented) {
                     #if os(iOS)
                     PhotoLibraryPickerView(
-                        cropsToIngredientBand: true,
+                        cropsToIngredientBand: false,
                         onCapture: { data in
                             isLegacyPhotoLibraryPresented = false
-                            Task { await processImages([data]) }
+                            if let image = UIImage(data: data) {
+                                libraryAlignImages = [image.flattenedForOCR()]
+                                showLibraryFrameAlign = true
+                            }
                         },
                         onCancel: {
                             isLegacyPhotoLibraryPresented = false
                         }
                     )
                     .ignoresSafeArea()
+                    #endif
+                }
+                .fullScreenCover(isPresented: $showLibraryFrameAlign) {
+                    #if os(iOS)
+                    PhotoLibraryFrameAlignFlow(
+                        images: libraryAlignImages,
+                        onComplete: { dataList in
+                            showLibraryFrameAlign = false
+                            libraryAlignImages = []
+                            Task { await processImages(dataList) }
+                        },
+                        onCancel: {
+                            showLibraryFrameAlign = false
+                            libraryAlignImages = []
+                        }
+                    )
                     #endif
                 }
                 .onAppear {
@@ -241,8 +265,9 @@ struct FavoritesView: View {
                 .modifier(
                     FavoritesPhotosPickerModifier(
                         isPresented: $isPhotoPickerPresented,
-                        onPickedData: { dataList in
-                            Task { await processImages(dataList) }
+                        onPickedImages: { images in
+                            libraryAlignImages = images
+                            showLibraryFrameAlign = true
                         }
                     )
                 )
@@ -886,7 +911,7 @@ private struct FavoriteNameSaveSheet: View {
 
 private struct FavoritesPhotosPickerModifier: ViewModifier {
     @Binding var isPresented: Bool
-    let onPickedData: ([Data]) -> Void
+    let onPickedImages: ([UIImage]) -> Void
 
     func body(content: Content) -> some View {
         content
@@ -894,8 +919,7 @@ private struct FavoritesPhotosPickerModifier: ViewModifier {
                 ModernPhotosPickerModifier(
                     isPresented: $isPresented,
                     maxSelectionCount: ModernPhotoLoader.maxSelectionCount,
-                    cropsToIngredientBand: true,
-                    onPickedData: onPickedData
+                    onPickedImages: onPickedImages
                 )
             )
     }
