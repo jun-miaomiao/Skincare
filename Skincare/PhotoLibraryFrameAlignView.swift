@@ -92,7 +92,10 @@ struct PhotoLibraryFrameAlignView: View {
                             .padding(.horizontal, 10)
                             .padding(.vertical, 5)
                             .background(Color.black.opacity(0.45), in: Capsule())
-                            .position(x: rect.midX, y: max(rect.minY - 22, topInset + 52))
+                            .position(
+                                x: rect.midX,
+                                y: min(max(rect.minY - 44, topInset + 28), rect.minY - 36)
+                            )
                     }
                     .onAppear { hostSize = size }
                     .onChange(of: size) { _, newSize in
@@ -173,10 +176,14 @@ struct PhotoLibraryFrameAlignView: View {
         let size = hostSize
         guard size.width > 1, size.height > 1 else { return }
         let frame = IngredientBandGeometry.overlayRect(in: size)
-        let padded = frame.insetBy(
+        var padded = frame.insetBy(
             dx: -frame.width * IngredientBandGeometry.cropPaddingRatioX,
             dy: -frame.height * IngredientBandGeometry.cropPaddingRatioY
         )
+        // 第一行常貼在白框上緣，多留約一行，避免水／AQUA 被切掉。
+        let extraTop = frame.height * 0.16
+        padded.origin.y -= extraTop
+        padded.size.height += extraTop
         if let data = cropper.jpegData(croppingTo: padded, in: size) {
             onConfirm(data)
             return

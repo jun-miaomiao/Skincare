@@ -92,7 +92,8 @@ class OCRManager {
     }
 
     private func recognizePrepared(_ image: UIImage) async -> OCRRecognitionResult {
-        guard let cgImage = image.cgImage else {
+        let edged = Self.insetSoEdgeLinesAreReadable(image)
+        guard let cgImage = edged.cgImage else {
             return OCRRecognitionResult(lines: [])
         }
         let visionCGImage = UIImage.redrawCGImageInSRGB(cgImage) ?? cgImage
@@ -122,6 +123,21 @@ class OCRManager {
             }
             return OCRRecognitionResult(lines: lines)
         }.value
+    }
+
+    /// Vision 會丟掉貼在圖片邊緣的字。四邊留白，讓第一行的水還在畫面裡。
+    private static func insetSoEdgeLinesAreReadable(_ image: UIImage) -> UIImage {
+        let padY = max(image.size.height * 0.08, 24)
+        let padX = max(image.size.width * 0.03, 12)
+        let canvas = CGSize(width: image.size.width + padX * 2, height: image.size.height + padY * 2)
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = 1
+        format.opaque = true
+        return UIGraphicsImageRenderer(size: canvas, format: format).image { ctx in
+            UIColor.white.setFill()
+            ctx.fill(CGRect(origin: .zero, size: canvas))
+            image.draw(in: CGRect(x: padX, y: padY, width: image.size.width, height: image.size.height))
+        }
     }
 
     private static func crop(_ image: UIImage, to rect: CGRect) -> UIImage? {
