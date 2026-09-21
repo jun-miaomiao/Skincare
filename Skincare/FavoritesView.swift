@@ -950,9 +950,8 @@ private struct FavoriteProductsPage: View {
                                     Button(role: .destructive) {
                                         deleteRecord(record)
                                     } label: {
-                                        Label("刪除", systemImage: "trash")
+                                        CenteredSwipeActionLabel(title: "刪除", systemImage: "trash")
                                     }
-                                    .labelStyle(.iconOnly)
                                 }
                             }
                         }
@@ -1033,9 +1032,8 @@ private struct FavoriteIngredientsPage: View {
                                         Button(role: .destructive) {
                                             deleteRecord(record)
                                         } label: {
-                                            Label("刪除", systemImage: "trash")
+                                            CenteredSwipeActionLabel(title: "刪除", systemImage: "trash")
                                         }
-                                        .labelStyle(.iconOnly)
                                     }
                                 }
                             }

@@ -254,9 +254,11 @@ struct ScanHistoryView: View {
                                 }
                                 _ = FavoriteManager.addFromScanHistory(entity, in: modelContext)
                             } label: {
-                                Label("最愛", systemImage: subscriptionStore.isPremium ? "star.fill" : "lock.fill")
+                                CenteredSwipeActionLabel(
+                                    title: "最愛",
+                                    systemImage: subscriptionStore.isPremium ? "star.fill" : "lock.fill"
+                                )
                             }
-                            .labelStyle(.iconOnly)
                             .tint(.orange)
                             .disabled(FavoriteManager.isFavorited(entity.recordID, favoritedScanIDs: favoritedScanIDs))
                         }
@@ -264,9 +266,8 @@ struct ScanHistoryView: View {
                             Button(role: .destructive) {
                                 deleteRecord(entity)
                             } label: {
-                                Label("刪除", systemImage: "trash")
+                                CenteredSwipeActionLabel(title: "刪除", systemImage: "trash")
                             }
-                            .labelStyle(.iconOnly)
                         }
                     }
                 }
