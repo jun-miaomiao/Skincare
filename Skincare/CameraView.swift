@@ -33,8 +33,6 @@ private struct CameraViewIOS: View {
     @State private var showPhotoLibraryPicker = false
     @State private var scannedImageData: Data?
     @State private var showPhotosPicker = false
-    @State private var libraryAlignImages: [UIImage] = []
-    @State private var showLibraryFrameAlign = false
     @State private var isScanning = false
     /// 多張相簿選取時顯示「正在分析多角度圖片...」
     @State private var scanningUsesMultiAngleCopy = false
@@ -65,25 +63,11 @@ private struct CameraViewIOS: View {
             .modifier(ModernPhotosPickerModifier(
                 isPresented: $showPhotosPicker,
                 maxSelectionCount: ModernPhotoLoader.maxSelectionCount,
-                onPickedImages: { images in
-                    libraryAlignImages = images
-                    showLibraryFrameAlign = true
+                cropsToIngredientBand: true,
+                onPickedData: { dataList in
+                    Task { await processImagesForAlerts(dataList: dataList, fromIngredientBand: true) }
                 }
             ))
-            .fullScreenCover(isPresented: $showLibraryFrameAlign) {
-                PhotoLibraryFrameAlignFlow(
-                    images: libraryAlignImages,
-                    onComplete: { dataList in
-                        showLibraryFrameAlign = false
-                        libraryAlignImages = []
-                        Task { await processImagesForAlerts(dataList: dataList, fromIngredientBand: true) }
-                    },
-                    onCancel: {
-                        showLibraryFrameAlign = false
-                        libraryAlignImages = []
-                    }
-                )
-            }
             .onAppear {
                 DataBootstrap.seedIfNeeded(in: modelContext)
                 if isActive {
@@ -268,13 +252,10 @@ private struct CameraViewIOS: View {
         }
         .fullScreenCover(isPresented: $showPhotoLibraryPicker) {
             PhotoLibraryPickerView(
-                cropsToIngredientBand: false,
+                cropsToIngredientBand: true,
                 onCapture: { data in
                     showPhotoLibraryPicker = false
-                    if let image = UIImage(data: data) {
-                        libraryAlignImages = [image.flattenedForOCR()]
-                        showLibraryFrameAlign = true
-                    }
+                    Task { await processImagesForAlerts(dataList: [data], fromIngredientBand: true) }
                 },
                 onCancel: {
                     showPhotoLibraryPicker = false

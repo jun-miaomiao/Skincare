@@ -416,8 +416,15 @@ struct IngredientDetailListView: View {
     ) -> some View {
         ForEach(items) { item in
             detailRow(for: item, displayMode: displayMode)
+                .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                    Button(role: .destructive) {
+                        guard let index = items.firstIndex(where: { $0.id == item.id }) else { return }
+                        onDelete(IndexSet(integer: index))
+                    } label: {
+                        Label("刪除", systemImage: "trash")
+                    }
+                }
         }
-        .onDelete(perform: onDelete)
     }
 
     private func detailRow(

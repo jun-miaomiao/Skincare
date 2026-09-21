@@ -53,8 +53,6 @@ struct FavoritesView: View {
     @State private var isCameraPresented = false
     @State private var isPhotoPickerPresented = false
     @State private var isLegacyPhotoLibraryPresented = false
-    @State private var libraryAlignImages: [UIImage] = []
-    @State private var showLibraryFrameAlign = false
 
     @State private var isScanning = false
     @State private var scanningUsesMultiAngleCopy = false
@@ -225,35 +223,16 @@ struct FavoritesView: View {
                 .fullScreenCover(isPresented: $isLegacyPhotoLibraryPresented) {
                     #if os(iOS)
                     PhotoLibraryPickerView(
-                        cropsToIngredientBand: false,
+                        cropsToIngredientBand: true,
                         onCapture: { data in
                             isLegacyPhotoLibraryPresented = false
-                            if let image = UIImage(data: data) {
-                                libraryAlignImages = [image.flattenedForOCR()]
-                                showLibraryFrameAlign = true
-                            }
+                            Task { await processImages([data]) }
                         },
                         onCancel: {
                             isLegacyPhotoLibraryPresented = false
                         }
                     )
                     .ignoresSafeArea()
-                    #endif
-                }
-                .fullScreenCover(isPresented: $showLibraryFrameAlign) {
-                    #if os(iOS)
-                    PhotoLibraryFrameAlignFlow(
-                        images: libraryAlignImages,
-                        onComplete: { dataList in
-                            showLibraryFrameAlign = false
-                            libraryAlignImages = []
-                            Task { await processImages(dataList) }
-                        },
-                        onCancel: {
-                            showLibraryFrameAlign = false
-                            libraryAlignImages = []
-                        }
-                    )
                     #endif
                 }
                 .onAppear {
@@ -265,9 +244,8 @@ struct FavoritesView: View {
                 .modifier(
                     FavoritesPhotosPickerModifier(
                         isPresented: $isPhotoPickerPresented,
-                        onPickedImages: { images in
-                            libraryAlignImages = images
-                            showLibraryFrameAlign = true
+                        onPickedData: { dataList in
+                            Task { await processImages(dataList) }
                         }
                     )
                 )
@@ -911,7 +889,7 @@ private struct FavoriteNameSaveSheet: View {
 
 private struct FavoritesPhotosPickerModifier: ViewModifier {
     @Binding var isPresented: Bool
-    let onPickedImages: ([UIImage]) -> Void
+    let onPickedData: ([Data]) -> Void
 
     func body(content: Content) -> some View {
         content
@@ -919,7 +897,8 @@ private struct FavoritesPhotosPickerModifier: ViewModifier {
                 ModernPhotosPickerModifier(
                     isPresented: $isPresented,
                     maxSelectionCount: ModernPhotoLoader.maxSelectionCount,
-                    onPickedImages: onPickedImages
+                    cropsToIngredientBand: true,
+                    onPickedData: onPickedData
                 )
             )
     }
