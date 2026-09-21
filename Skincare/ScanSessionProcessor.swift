@@ -1,8 +1,5 @@
 import Foundation
 import SwiftData
-#if canImport(UIKit)
-import UIKit
-#endif
 
 struct ScanSessionResult: Sendable {
     let ingredients: [String]
@@ -175,16 +172,13 @@ enum ScanSessionProcessor {
                 fullText = ingredients.joined(separator: ", ")
                 print("🔗 Sequential Overlap Merge 後成分數: \(ingredients.count)")
             } else if let only = perImageLists.first {
-                // 與貼上／多圖路徑一致：清掉包裝殘字與已命中成分的碎片未知項。
-                ingredients = SequentialOverlapMerger.stripRedundantUnknowns(only)
+                ingredients = only
                 fullText = IngredientParser.preprocessIngredientListText(
                     perImageTexts.first ?? fallbackJoinedText
                 )
             } else {
-                ingredients = SequentialOverlapMerger.stripRedundantUnknowns(
-                    SequentialOverlapMerger.orderPreservingUnique(
-                        displayList(from: fallbackJoinedText)
-                    )
+                ingredients = SequentialOverlapMerger.orderPreservingUnique(
+                    displayList(from: fallbackJoinedText)
                 )
                 fullText = IngredientParser.preprocessIngredientListText(fallbackJoinedText)
             }
@@ -382,65 +376,4 @@ enum ScanSessionProcessor {
             resolvedSnapshots: snapshots
         )
     }
-
-    #if canImport(UIKit)
-    /// 白框先辨識。實機裁切常常只含成分表的一段（模擬器裁切失敗時會改送整張，所以能到 42 項）。
-    /// 再辨識原圖，只有明顯多出成分才採用，短成分表不會被包裝文字蓋掉。
-    static func analyzeCapturedPhotos(
-        _ images: [UIImage],
-        previewSize: CGSize,
-        profile: UserProfile?
-    ) async -> ScanSessionResult {
-        let cropped = images.compactMap {
-            IngredientBandPreprocessor.jpegDataForCameraOCR($0, previewSize: previewSize)
-        }
-        let framed = await analyze(
-            imageDataList: cropped,
-            profile: profile,
-            usesIngredientBandCrop: true
-        )
-        let full = images.compactMap { $0.jpegDataFlattenedForOCR(compressionQuality: 0.86) }
-        guard !full.isEmpty else { return framed }
-        let whole = await analyze(
-            imageDataList: full,
-            profile: profile,
-            usesIngredientBandCrop: false
-        )
-        return preferRicherScan(whole, over: framed)
-    }
-
-    static func analyzeAlignedLibraryPhotos(
-        croppedJPEG: [Data],
-        originalImages: [UIImage],
-        profile: UserProfile?
-    ) async -> ScanSessionResult {
-        let framed = await analyze(
-            imageDataList: croppedJPEG,
-            profile: profile,
-            usesIngredientBandCrop: true
-        )
-        let full = originalImages.compactMap { $0.jpegDataFlattenedForOCR(compressionQuality: 0.86) }
-        guard !full.isEmpty else { return framed }
-        let whole = await analyze(
-            imageDataList: full,
-            profile: profile,
-            usesIngredientBandCrop: false
-        )
-        return preferRicherScan(whole, over: framed)
-    }
-
-    /// 白框結果先留著。原圖要多出至少 4 項字典成分才換，避免少數成分的產品被文案灌水。
-    private static func preferRicherScan(
-        _ whole: ScanSessionResult,
-        over framed: ScanSessionResult
-    ) -> ScanSessionResult {
-        if whole.dictionaryHitCount >= framed.dictionaryHitCount + 4 {
-            return whole
-        }
-        if framed.dictionaryHitCount == 0, whole.dictionaryHitCount > 0 {
-            return whole
-        }
-        return framed
-    }
-    #endif
 }

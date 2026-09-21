@@ -77,10 +77,7 @@ private struct CameraViewIOS: View {
                         retryLibraryImages = session.images
                         libraryAlignSession = nil
                         Task {
-                            await processLibraryAlignedImages(
-                                cropped: dataList,
-                                originals: session.images
-                            )
+                            await processImagesForAlerts(dataList: dataList, fromIngredientBand: true)
                         }
                     },
                     onCancel: {
@@ -110,11 +107,7 @@ private struct CameraViewIOS: View {
     private var cameraBody: some View {
         ZStack {
             if camera.isConfigured {
-                CameraPreviewView(
-                    session: camera.session,
-                    textBoxes: camera.detectedTextBoxes,
-                    detectionImageSize: camera.detectionImageSize
-                ) { devicePoint in
+                CameraPreviewView(session: camera.session) { devicePoint in
                     camera.focus(atDevicePoint: devicePoint)
                 }
                 // 僅延伸上方，不可蓋過底部系統 TabBar。
@@ -488,36 +481,17 @@ private struct CameraViewIOS: View {
         guard ensureCameraScanAllowed() else { return }
         isFinishingMultiShot = true
         defer { isFinishingMultiShot = false }
-        scanningUsesMultiAngleCopy = capturedImages.count > 1
-        isScanning = true
-        showAvoidAlert = false
-        showScanSummarySheet = false
-        isFollowUpCaptureMode = false
-
-        let profile: UserProfile? = profileList.first
-        let result = await ScanSessionProcessor.analyzeCapturedPhotos(
-            capturedImages,
-            previewSize: cameraPreviewSize,
-            profile: profile
-        )
-        let primary = capturedImages.first.flatMap {
-            IngredientBandPreprocessor.jpegDataForCameraOCR($0, previewSize: cameraPreviewSize)
-                ?? $0.jpegDataFlattenedForOCR(compressionQuality: 0.86)
+        let dataList = capturedImages.compactMap {
+            IngredientBandPreprocessor.jpegDataForCameraOCR(
+                $0,
+                previewSize: cameraPreviewSize
+            )
         }
-
-        isScanning = false
-        scanningUsesMultiAngleCopy = false
-
-        guard let primary else { return }
-        scannedImageData = primary
-
-        if result.needsCaptureRetake {
-            presentUnclearCapture(result: result, primaryImageData: primary)
-            return
+        guard !dataList.isEmpty else { return }
+        await processImagesForAlerts(dataList: dataList, fromIngredientBand: true)
+        if latestScanPayload != nil {
+            resetCapturedImages()
         }
-
-        commitSuccessfulScan(result: result, primaryImageData: primary)
-        resetCapturedImages()
     }
 
     private func resetCapturedImages() {
@@ -658,42 +632,6 @@ private struct CameraViewIOS: View {
         } else {
             showScanSummarySheet = true
         }
-    }
-
-    @MainActor
-    private func processLibraryAlignedImages(cropped: [Data], originals: [UIImage]) async {
-        guard let primary = cropped.first else { return }
-
-        if isFollowUpCaptureMode {
-            await processFollowUpCapture(data: primary)
-            return
-        }
-
-        guard ensureCameraScanAllowed() else { return }
-
-        scanningUsesMultiAngleCopy = cropped.count > 1
-        isScanning = true
-        showAvoidAlert = false
-        showScanSummarySheet = false
-        isFollowUpCaptureMode = false
-        scannedImageData = primary
-
-        let profile: UserProfile? = profileList.first
-        let result = await ScanSessionProcessor.analyzeAlignedLibraryPhotos(
-            croppedJPEG: cropped,
-            originalImages: originals,
-            profile: profile
-        )
-
-        isScanning = false
-        scanningUsesMultiAngleCopy = false
-
-        if result.needsCaptureRetake {
-            presentUnclearCapture(result: result, primaryImageData: primary)
-            return
-        }
-
-        commitSuccessfulScan(result: result, primaryImageData: primary)
     }
 
     @MainActor

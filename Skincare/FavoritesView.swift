@@ -246,7 +246,7 @@ struct FavoritesView: View {
                         onComplete: { dataList in
                             retryLibraryImages = session.images
                             libraryAlignSession = nil
-                            Task { await processImages(dataList, originals: session.images) }
+                            Task { await processImages(dataList) }
                         },
                         onCancel: {
                             libraryAlignSession = nil
@@ -680,7 +680,7 @@ struct FavoritesView: View {
     }
 
     @MainActor
-    private func processImages(_ dataList: [Data], originals: [UIImage] = []) async {
+    private func processImages(_ dataList: [Data]) async {
         guard let primary = dataList.first else { return }
         // 相簿選擇器已關閉；略過中間結果／風險確認，辨識完直接命名。
         isPhotoPickerPresented = false
@@ -693,16 +693,7 @@ struct FavoritesView: View {
         pendingFavoriteScan = nil
 
         let profile = profileList.first
-        let result: ScanSessionResult
-        if originals.isEmpty {
-            result = await ScanSessionProcessor.analyze(imageDataList: dataList, profile: profile)
-        } else {
-            result = await ScanSessionProcessor.analyzeAlignedLibraryPhotos(
-                croppedJPEG: dataList,
-                originalImages: originals,
-                profile: profile
-            )
-        }
+        let result = await ScanSessionProcessor.analyze(imageDataList: dataList, profile: profile)
 
         isScanning = false
         scanningUsesMultiAngleCopy = false

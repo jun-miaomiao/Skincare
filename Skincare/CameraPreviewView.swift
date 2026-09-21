@@ -2,7 +2,6 @@
 import AVFoundation
 import SwiftUI
 import UIKit
-import Vision
 
 enum CameraUnavailableReason: Equatable {
     case simulator
@@ -15,20 +14,12 @@ final class CameraController: NSObject, ObservableObject {
 
     @Published private(set) var isConfigured = false
     @Published private(set) var unavailableReason: CameraUnavailableReason?
-    /// 預覽上偵測到的文字框（Vision 正規化座標，原點在左下）。只用於藍色標示。
-    @Published private(set) var detectedTextBoxes: [CGRect] = []
-    /// 文字框所屬的直立影像尺寸，用來對齊預覽。
-    @Published private(set) var detectionImageSize: CGSize = .zero
 
     /// 所有 session 設定 / start / stop 必須在此佇列，禁止佔用主執行緒。
     private let sessionQueue = DispatchQueue(label: "com.skincare.cameraSessionQueue")
 
     private let photoOutput = AVCapturePhotoOutput()
-    private let videoOutput = AVCaptureVideoDataOutput()
-    private let visionQueue = DispatchQueue(label: "com.skincare.cameraTextVision")
     private var captureCompletion: ((Data?) -> Void)?
-    private var isDetectingText = false
-    private var lastTextDetectTime: CFTimeInterval = 0
     /// 僅在 sessionQueue 上讀寫。
     private var hasConfiguredSession = false
     private var isConfiguring = false
@@ -130,10 +121,6 @@ final class CameraController: NSObject, ObservableObject {
     private func stopSessionOnQueue() {
         guard session.isRunning else { return }
         session.stopRunning()
-        DispatchQueue.main.async { [weak self] in
-            self?.detectedTextBoxes = []
-            self?.detectionImageSize = .zero
-        }
     }
 
     private func preferredBackCamera() -> AVCaptureDevice? {
@@ -263,14 +250,6 @@ final class CameraController: NSObject, ObservableObject {
         }
 
         session.addOutput(photoOutput)
-        videoOutput.alwaysDiscardsLateVideoFrames = true
-        videoOutput.videoSettings = [
-            kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_420YpCbCr8BiPlanarFullRange
-        ]
-        videoOutput.setSampleBufferDelegate(self, queue: visionQueue)
-        if session.canAddOutput(videoOutput) {
-            session.addOutput(videoOutput)
-        }
         session.commitConfiguration()
 
         hasConfiguredSession = true
@@ -299,45 +278,6 @@ final class CameraController: NSObject, ObservableObject {
     }
 }
 
-extension CameraController: AVCaptureVideoDataOutputSampleBufferDelegate {
-    func captureOutput(
-        _ output: AVCaptureOutput,
-        didOutput sampleBuffer: CMSampleBuffer,
-        from connection: AVCaptureConnection
-    ) {
-        _ = connection
-        let now = CACurrentMediaTime()
-        guard !isDetectingText, now - lastTextDetectTime > 0.4 else { return }
-        guard let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else { return }
-        isDetectingText = true
-        lastTextDetectTime = now
-
-        let width = CVPixelBufferGetWidth(pixelBuffer)
-        let height = CVPixelBufferGetHeight(pixelBuffer)
-        let orientedSize = CGSize(width: height, height: width)
-
-        let request = VNDetectTextRectanglesRequest()
-        request.reportCharacterBoxes = false
-        let handler = VNImageRequestHandler(cmSampleBuffer: sampleBuffer, orientation: .right, options: [:])
-        defer { isDetectingText = false }
-        do {
-            try handler.perform([request])
-        } catch {
-            DispatchQueue.main.async { [weak self] in
-                self?.detectedTextBoxes = []
-            }
-            return
-        }
-        let boxes = (request.results ?? []).map(\.boundingBox).filter {
-            $0.width > 0.02 && $0.height > 0.008
-        }
-        DispatchQueue.main.async { [weak self] in
-            self?.detectionImageSize = orientedSize
-            self?.detectedTextBoxes = boxes
-        }
-    }
-}
-
 extension CameraController: AVCapturePhotoCaptureDelegate {
     func photoOutput(
         _ output: AVCapturePhotoOutput,
@@ -360,8 +300,6 @@ extension CameraController: AVCapturePhotoCaptureDelegate {
 
 struct CameraPreviewView: UIViewRepresentable {
     let session: AVCaptureSession
-    var textBoxes: [CGRect] = []
-    var detectionImageSize: CGSize = .zero
     var onTapFocus: ((CGPoint) -> Void)?
 
     func makeCoordinator() -> Coordinator {
@@ -376,7 +314,6 @@ struct CameraPreviewView: UIViewRepresentable {
             previewLayer.videoGravity = .resizeAspectFill
         }
         context.coordinator.attach(to: view)
-        view.updateTextHighlights(textBoxes, imageSize: detectionImageSize)
         return view
     }
 
@@ -386,7 +323,6 @@ struct CameraPreviewView: UIViewRepresentable {
         if let previewLayer = uiView.previewLayer {
             previewLayer.session = session
         }
-        uiView.updateTextHighlights(textBoxes, imageSize: detectionImageSize)
     }
 
     final class Coordinator: NSObject {
@@ -414,10 +350,6 @@ struct CameraPreviewView: UIViewRepresentable {
 }
 
 final class CameraPreviewUIView: UIView {
-    private let textHighlightLayer = CAShapeLayer()
-    private var textBoxes: [CGRect] = []
-    private var detectionImageSize: CGSize = .zero
-
     override class var layerClass: AnyClass {
         AVCaptureVideoPreviewLayer.self
     }
@@ -426,66 +358,9 @@ final class CameraPreviewUIView: UIView {
         layer as? AVCaptureVideoPreviewLayer
     }
 
-    override init(frame: CGRect) {
-        super.init(frame: frame)
-        textHighlightLayer.fillColor = UIColor.systemBlue.withAlphaComponent(0.28).cgColor
-        textHighlightLayer.strokeColor = UIColor.systemBlue.cgColor
-        textHighlightLayer.lineWidth = 2
-        textHighlightLayer.contentsScale = UIScreen.main.scale
-        layer.addSublayer(textHighlightLayer)
-    }
-
-    required init?(coder: NSCoder) {
-        nil
-    }
-
     override func layoutSubviews() {
         super.layoutSubviews()
         previewLayer?.frame = bounds
-        textHighlightLayer.frame = bounds
-        redrawTextHighlights()
-    }
-
-    func updateTextHighlights(_ boxes: [CGRect], imageSize: CGSize) {
-        textBoxes = boxes
-        detectionImageSize = imageSize
-        redrawTextHighlights()
-    }
-
-    /// 把 Vision 左下原點的文字框畫成藍色，表示預覽裡已看到字。
-    private func redrawTextHighlights() {
-        guard bounds.width > 1, bounds.height > 1,
-              detectionImageSize.width > 1, detectionImageSize.height > 1,
-              !textBoxes.isEmpty else {
-            textHighlightLayer.path = nil
-            return
-        }
-
-        let scale = max(
-            bounds.width / detectionImageSize.width,
-            bounds.height / detectionImageSize.height
-        )
-        let displayed = CGSize(
-            width: detectionImageSize.width * scale,
-            height: detectionImageSize.height * scale
-        )
-        let offset = CGPoint(
-            x: (displayed.width - bounds.width) / 2,
-            y: (displayed.height - bounds.height) / 2
-        )
-
-        let path = CGMutablePath()
-        for box in textBoxes {
-            let rect = CGRect(
-                x: box.minX * displayed.width - offset.x,
-                y: (1 - box.maxY) * displayed.height - offset.y,
-                width: box.width * displayed.width,
-                height: box.height * displayed.height
-            ).insetBy(dx: -2, dy: -1)
-            guard rect.width > 4, rect.height > 4 else { continue }
-            path.addRoundedRect(in: rect, cornerWidth: 4, cornerHeight: 4)
-        }
-        textHighlightLayer.path = path
     }
 }
 #endif

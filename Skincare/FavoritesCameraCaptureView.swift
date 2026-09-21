@@ -31,11 +31,7 @@ struct FavoritesCameraCaptureView: View {
         ZStack {
             #if os(iOS)
             if camera.isConfigured {
-                CameraPreviewView(
-                    session: camera.session,
-                    textBoxes: camera.detectedTextBoxes,
-                    detectionImageSize: camera.detectionImageSize
-                ) { devicePoint in
+                CameraPreviewView(session: camera.session) { devicePoint in
                     camera.focus(atDevicePoint: devicePoint)
                 }
                 .ignoresSafeArea()
@@ -224,39 +220,17 @@ struct FavoritesCameraCaptureView: View {
         guard !isScanning, !isFinishingMultiShot, capturedImages.count >= 1 else { return }
         isFinishingMultiShot = true
         defer { isFinishingMultiShot = false }
-        isScanning = true
-        let profile = profileList.first
-        let result = await ScanSessionProcessor.analyzeCapturedPhotos(
-            capturedImages,
-            previewSize: cameraPreviewSize,
-            profile: profile
-        )
-        let primary = capturedImages.first.flatMap {
-            IngredientBandPreprocessor.jpegDataForCameraOCR($0, previewSize: cameraPreviewSize)
-                ?? $0.jpegDataFlattenedForOCR(compressionQuality: 0.86)
+        let dataList = capturedImages.compactMap {
+            IngredientBandPreprocessor.jpegDataForCameraOCR(
+                $0,
+                previewSize: cameraPreviewSize
+            )
         }
-        isScanning = false
-        guard let primary else { return }
-
-        if result.needsCaptureRetake {
-            unclearPrompt = result.ingredients.isEmpty
-                ? .noReadableText
-                : .lowCaptureQuality(identifiedCount: result.dictionaryHitCount)
-            if result.dictionaryHitCount > 0 {
-                deferredLowQualityResult = result
-                deferredLowQualityImage = primary
-            } else {
-                deferredLowQualityResult = nil
-                deferredLowQualityImage = nil
-            }
-            withAnimation(.spring(response: 0.38, dampingFraction: 0.78)) {
-                showUnclearResult = true
-            }
-            return
+        guard !dataList.isEmpty else { return }
+        await process(dataList: dataList)
+        if !showUnclearResult {
+            resetCapturedImages()
         }
-
-        commitSuccessfulScan(result: result, primaryImageData: primary)
-        resetCapturedImages()
     }
 
     private func resetCapturedImages() {
