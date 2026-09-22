@@ -119,7 +119,7 @@ struct LiveTextCameraFlow: View {
             .padding(.horizontal, 18)
             .padding(.vertical, 10)
 
-            Text("按住亮起來的字再拖曳。沒被辨識到的字選不到。")
+            Text("整張照片都在畫面裡，兩指可放大或移動。按住亮起來的字再拖曳，沒被辨識到的字選不到。")
                 .font(.footnote)
                 .foregroundColor(Theme.muted)
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -212,22 +212,25 @@ private struct LiveTextImageSelector: UIViewRepresentable {
         Coordinator(selectedText: $selectedText, recognizedText: $recognizedText, isReading: $isReading)
     }
 
-    func makeUIView(context: Context) -> UIImageView {
-        let view = UIImageView()
-        view.contentMode = .scaleAspectFit
-        view.backgroundColor = .black
-        view.isUserInteractionEnabled = true
-        view.image = image
-        view.addInteraction(context.coordinator.interaction)
-        context.coordinator.analyze(image)
+    func makeUIView(context: Context) -> LiveTextHostView {
+        let view = LiveTextHostView()
+        view.imageView.addInteraction(context.coordinator.interaction)
+        view.onImageReady = { image in
+            context.coordinator.analyze(image)
+        }
+        view.setImage(image)
         return view
     }
 
-    func updateUIView(_ uiView: UIImageView, context: Context) {
-        if uiView.image !== image {
-            uiView.image = image
-            context.coordinator.analyze(image)
+    func updateUIView(_ uiView: LiveTextHostView, context: Context) {
+        uiView.setImage(image)
+    }
+
+    func sizeThatFits(_ proposal: ProposedViewSize, uiView: LiveTextHostView, context: Context) -> CGSize? {
+        guard let width = proposal.width, let height = proposal.height, width > 1, height > 1 else {
+            return nil
         }
+        return CGSize(width: width, height: height)
     }
 
     final class Coordinator: NSObject, ImageAnalysisInteractionDelegate {
@@ -277,6 +280,97 @@ private struct LiveTextImageSelector: UIViewRepresentable {
         func textSelectionDidChange(_ interaction: ImageAnalysisInteraction) {
             selectedText.wrappedValue = interaction.selectedText
         }
+    }
+}
+
+/// 整張照片先縮進畫面。兩指放大後才能移動；單指留給選字。
+private final class LiveTextHostView: UIView, UIScrollViewDelegate {
+    let scrollView = UIScrollView()
+    let imageView = UIImageView()
+    var onImageReady: ((UIImage) -> Void)?
+
+    private var currentImage: UIImage?
+    private var analyzedImage: UIImage?
+    private var fittedSize: CGSize = .zero
+    private var laidOutBounds: CGSize = .zero
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        clipsToBounds = true
+        backgroundColor = .black
+        scrollView.delegate = self
+        scrollView.minimumZoomScale = 1
+        scrollView.maximumZoomScale = 6
+        scrollView.bouncesZoom = true
+        scrollView.showsHorizontalScrollIndicator = false
+        scrollView.showsVerticalScrollIndicator = false
+        scrollView.backgroundColor = .black
+        scrollView.contentInsetAdjustmentBehavior = .never
+        scrollView.delaysContentTouches = false
+        scrollView.panGestureRecognizer.minimumNumberOfTouches = 2
+        imageView.isUserInteractionEnabled = true
+        imageView.contentMode = .scaleAspectFit
+        imageView.backgroundColor = .black
+        scrollView.addSubview(imageView)
+        addSubview(scrollView)
+    }
+
+    required init?(coder: NSCoder) { nil }
+
+    override var intrinsicContentSize: CGSize {
+        CGSize(width: UIView.noIntrinsicMetric, height: UIView.noIntrinsicMetric)
+    }
+
+    func setImage(_ image: UIImage) {
+        guard currentImage !== image else { return }
+        currentImage = image
+        analyzedImage = nil
+        fittedSize = .zero
+        laidOutBounds = .zero
+        imageView.image = image
+        scrollView.zoomScale = 1
+        setNeedsLayout()
+    }
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        scrollView.frame = bounds
+        guard let image = currentImage, bounds.width > 1, bounds.height > 1 else { return }
+        let boundsChanged = abs(laidOutBounds.width - bounds.width) > 0.5
+            || abs(laidOutBounds.height - bounds.height) > 0.5
+        guard boundsChanged || fittedSize == .zero else { return }
+        laidOutBounds = bounds.size
+        let fit = aspectFit(image.size, in: bounds.size)
+        fittedSize = fit
+        scrollView.zoomScale = 1
+        imageView.frame = CGRect(origin: .zero, size: fit)
+        scrollView.contentSize = fit
+        centerContent()
+        guard analyzedImage !== image else { return }
+        analyzedImage = image
+        onImageReady?(image)
+    }
+
+    func viewForZooming(in scrollView: UIScrollView) -> UIView? {
+        imageView
+    }
+
+    func scrollViewDidZoom(_ scrollView: UIScrollView) {
+        centerContent()
+    }
+
+    private func centerContent() {
+        let width = scrollView.contentSize.width
+        let height = scrollView.contentSize.height
+        let offsetX = max((scrollView.bounds.width - width) * 0.5, 0)
+        let offsetY = max((scrollView.bounds.height - height) * 0.5, 0)
+        imageView.center = CGPoint(x: width * 0.5 + offsetX, y: height * 0.5 + offsetY)
+    }
+
+    private func aspectFit(_ imageSize: CGSize, in boundsSize: CGSize) -> CGSize {
+        guard imageSize.width > 0, imageSize.height > 0 else { return boundsSize }
+        let scale = min(boundsSize.width / imageSize.width, boundsSize.height / imageSize.height)
+        return CGSize(width: floor(imageSize.width * scale), height: floor(imageSize.height * scale))
     }
 }
 #endif

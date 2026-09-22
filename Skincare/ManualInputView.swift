@@ -100,6 +100,11 @@ struct ManualInputView: View {
                         cameraToolbarButton
                     }
                 }
+                ToolbarItemGroup(placement: .keyboard) {
+                    Spacer()
+                    Button("完成") { focusedField = nil }
+                        .fontWeight(.semibold)
+                }
             }
             .navigationDestination(item: $detailRoute) { route in
                 IngredientDetailListView(
@@ -113,7 +118,9 @@ struct ManualInputView: View {
                 )
             }
             .onAppear {
-                focusedField = .body
+                if !isTabRoot {
+                    focusedField = .body
+                }
             }
             .interactiveDismissDisabled(!isTabRoot)
             .fullScreenCover(isPresented: $showLiveTextCamera) {
@@ -266,6 +273,8 @@ struct ManualInputView: View {
                 .foregroundColor(Theme.muted)
                 .fixedSize(horizontal: false, vertical: true)
         }
+        .contentShape(Rectangle())
+        .onTapGesture { focusedField = nil }
         .accessibilityElement(children: .combine)
     }
 
@@ -288,7 +297,9 @@ struct ManualInputView: View {
         guard !trimmed.isEmpty else { return }
         ingredientsText = trimmed
         analyzeError = nil
-        focusedField = .body
+        if !isTabRoot {
+            focusedField = .body
+        }
     }
 
     @MainActor
