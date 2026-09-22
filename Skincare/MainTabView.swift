@@ -4,7 +4,7 @@ import SwiftData
 enum AppTab: Int, Hashable {
     case favorites = 0
     case scanHistory = 1
-    case camera = 2
+    case paste = 2
     case dictionary = 3
     case profile = 4
 }
@@ -35,11 +35,11 @@ struct MainTabView: View {
                 .badge(unreadCount)
                 .tag(AppTab.scanHistory)
 
-            LazyCameraTab(isSelected: selectedTab == .camera)
+            PasteIngredientTab()
                 .tabItem {
-                    Label("相機", systemImage: "camera.fill")
+                    Label("貼上", systemImage: "doc.on.clipboard")
                 }
-                .tag(AppTab.camera)
+                .tag(AppTab.paste)
 
             DictionaryView()
                 .tabItem {
@@ -61,31 +61,14 @@ struct MainTabView: View {
     }
 }
 
-/// 相機 Tab 按需載入：未選中前不建立 CameraController / AVCaptureSession。
-private struct LazyCameraTab: View {
-    let isSelected: Bool
-    @State private var hasActivated = false
-
+/// 中間分頁是貼上。相機在貼上頁裡，只帶回有辨識到的字。
+private struct PasteIngredientTab: View {
     var body: some View {
-        Group {
-            if hasActivated {
-                CameraView(isActive: isSelected)
-            } else {
-                Color.black
-                    .ignoresSafeArea(edges: .top)
-                    .allowsHitTesting(false)
-            }
-        }
-        .onChange(of: isSelected) { _, selected in
-            if selected {
-                hasActivated = true
-            }
-        }
-        .onAppear {
-            if isSelected {
-                hasActivated = true
-            }
-        }
+        ManualInputView(
+            source: .history,
+            isTabRoot: true,
+            onAnalyzed: { _ in }
+        )
     }
 }
 

@@ -140,10 +140,10 @@ private struct ProfileFormContent: View {
             if !subscriptionStore.isPremium,
                let remaining = FreeScanQuota.remainingCameraScans(isPremium: false) {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("本週相機／相簿剩餘 \(remaining)／\(FreeScanQuota.weeklyCameraScanLimit) 次")
+                    Text("本週掃描剩餘 \(remaining)／\(FreeScanQuota.weeklyCameraScanLimit) 次")
                         .font(.caption)
                         .foregroundColor(Theme.muted)
-                    Text("貼上成分解析不限次數")
+                    Text("拍照與貼上成分共用")
                         .font(.caption)
                         .foregroundColor(Theme.muted)
                 }

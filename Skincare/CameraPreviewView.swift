@@ -124,24 +124,8 @@ final class CameraController: NSObject, ObservableObject {
     }
 
     private func preferredBackCamera() -> AVCaptureDevice? {
-        // Dual/triple virtual devices enable automatic macro switching on supported iPhones.
-        let preferredTypes: [AVCaptureDevice.DeviceType] = [
-            .builtInTripleCamera,
-            .builtInDualWideCamera,
-            .builtInDualCamera,
-            .builtInWideAngleCamera
-        ]
-        let discovery = AVCaptureDevice.DiscoverySession(
-            deviceTypes: preferredTypes,
-            mediaType: .video,
-            position: .back
-        )
-        for type in preferredTypes {
-            if let device = discovery.devices.first(where: { $0.deviceType == type }) {
-                return device
-            }
-        }
-        return AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back)
+        // 只開主鏡頭（廣角 1x）。三鏡頭虛擬裝置靠近時會自動切到超廣角，預覽和拍照對不齊。
+        AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back)
     }
 
     private func configureFocusDefaults(for device: AVCaptureDevice) {
@@ -165,6 +149,8 @@ final class CameraController: NSObject, ObservableObject {
             if device.isExposureModeSupported(.continuousAutoExposure) {
                 device.exposureMode = .continuousAutoExposure
             }
+            let zoom = min(max(1.0, device.minAvailableVideoZoomFactor), device.maxAvailableVideoZoomFactor)
+            device.videoZoomFactor = zoom
             device.unlockForConfiguration()
         } catch {
             // Keep session usable even if focus configuration fails.

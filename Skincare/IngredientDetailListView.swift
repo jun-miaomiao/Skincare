@@ -41,6 +41,7 @@ struct IngredientDetailListView: View {
     @State private var activeSearchSheet: IngredientSearchPresentation?
     @State private var showManualPasteSheet = false
     @State private var showPaywall = false
+    @State private var paywallReason: PaywallReason = .favorites
 
     @State private var editableProductName: String = ""
     @State private var showRenameAlert = false
@@ -238,7 +239,7 @@ struct IngredientDetailListView: View {
             }
         }
         .sheet(isPresented: $showPaywall) {
-            PaywallView(reason: .favorites)
+            PaywallView(reason: paywallReason)
         }
         .task(id: contentIdentity) {
             didSetUnmatchedExpansion = false
@@ -267,7 +268,7 @@ struct IngredientDetailListView: View {
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 28)
             Button {
-                showManualPasteSheet = true
+                openManualPasteIfAllowed()
             } label: {
                 Label("貼上成分表", systemImage: "doc.on.clipboard")
                     .font(.subheadline.weight(.semibold))
@@ -314,7 +315,7 @@ struct IngredientDetailListView: View {
                     WeakRecognitionHintCard(
                         count: identifiedCount,
                         onSearchAdd: { beginAdd() },
-                        onPasteOfficial: { showManualPasteSheet = true }
+                        onPasteOfficial: { openManualPasteIfAllowed() }
                     )
                     .listRowInsets(EdgeInsets(top: 8, leading: 18, bottom: 4, trailing: 18))
                     .listRowSeparator(.hidden)
@@ -447,6 +448,7 @@ struct IngredientDetailListView: View {
         .swipeActions(edge: .leading, allowsFullSwipe: true) {
             Button {
                 guard subscriptionStore.isPremium else {
+                    paywallReason = .favorites
                     showPaywall = true
                     return
                 }
@@ -692,6 +694,17 @@ struct IngredientDetailListView: View {
     }
 
     // MARK: - Edit / Delete / Add
+
+    private func openManualPasteIfAllowed() {
+        let createsNewRecord = historyRecordID == nil && favoriteRecordID == nil
+        if createsNewRecord,
+           !FreeScanQuota.canStartCameraScan(isPremium: subscriptionStore.isPremium) {
+            paywallReason = .weeklyScanLimit
+            showPaywall = true
+            return
+        }
+        showManualPasteSheet = true
+    }
 
     private func beginEdit(_ item: ScannedIngredientItem) {
         editingItemID = item.id

@@ -160,8 +160,8 @@ final class SubscriptionStore: ObservableObject {
     }
 }
 
-/// 免費層相機／相簿掃描額度（貼上成分不計）。
-/// 次數存在 Keychain，重裝 App 也不重置；額度視窗為滾動 7 天（用滿須等滿 7 天）。
+/// 免費層掃描額度。拍照與貼上成分共用，重裝 App 也不重置。
+/// 額度視窗為滾動 7 天（用滿須等滿 7 天）。
 enum FreeScanQuota {
     static let weeklyCameraScanLimit = 7
     private static let windowDays = 7

@@ -176,14 +176,10 @@ struct PhotoLibraryFrameAlignView: View {
         let size = hostSize
         guard size.width > 1, size.height > 1 else { return }
         let frame = IngredientBandGeometry.overlayRect(in: size)
-        var padded = frame.insetBy(
+        let padded = frame.insetBy(
             dx: -frame.width * IngredientBandGeometry.cropPaddingRatioX,
             dy: -frame.height * IngredientBandGeometry.cropPaddingRatioY
         )
-        // 第一行常貼在白框上緣，多留約一行，避免水／AQUA 被切掉。
-        let extraTop = frame.height * 0.16
-        padded.origin.y -= extraTop
-        padded.size.height += extraTop
         if let data = cropper.jpegData(croppingTo: padded, in: size) {
             onConfirm(data)
             return

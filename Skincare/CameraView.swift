@@ -5,12 +5,20 @@ import UIKit
 #endif
 
 struct CameraView: View {
-    /// 僅在相機 Tab 真正被選中時為 true，用來啟動／暫停 session。
+    /// 僅在相機真正顯示時為 true，用來啟動／暫停 session。
     var isActive: Bool = true
+    /// 從貼上頁打開時不再放第二個貼上入口。
+    var showsPasteButton: Bool = true
+    /// 以全螢幕蓋上時顯示關閉，才能回到貼上頁。
+    var allowsDismiss: Bool = false
 
     var body: some View {
         #if os(iOS)
-        CameraViewIOS(isActive: isActive)
+        CameraViewIOS(
+            isActive: isActive,
+            showsPasteButton: showsPasteButton,
+            allowsDismiss: allowsDismiss
+        )
         #else
         CameraUnavailableView(
             title: "相機僅支援 iOS 裝置",
@@ -23,19 +31,17 @@ struct CameraView: View {
 #if os(iOS)
 private struct CameraViewIOS: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var scanLaunch: ScanLaunchBridge
     @EnvironmentObject private var subscriptionStore: SubscriptionStore
     @Query private var profileList: [UserProfile]
 
     var isActive: Bool
+    var showsPasteButton: Bool
+    var allowsDismiss: Bool
 
     @StateObject private var camera = CameraController()
-    @State private var showPhotoLibraryPicker = false
     @State private var scannedImageData: Data?
-    @State private var showPhotosPicker = false
-    @State private var libraryAlignSession: PhotoLibraryAlignSession?
-    /// 相簿對框失敗時，「重拍」可回到同一組圖再對齊。
-    @State private var retryLibraryImages: [UIImage] = []
     @State private var isScanning = false
     /// 多張相簿選取時顯示「正在分析多角度圖片...」
     @State private var scanningUsesMultiAngleCopy = false
@@ -67,28 +73,6 @@ private struct CameraViewIOS: View {
 
     var body: some View {
         cameraBody
-            .modifier(ModernPhotosPickerModifier(
-                isPresented: $showPhotosPicker,
-                maxSelectionCount: ModernPhotoLoader.maxSelectionCount,
-                onPickedImages: { images in
-                    libraryAlignSession = PhotoLibraryAlignSession(images: images)
-                }
-            ))
-            .fullScreenCover(item: $libraryAlignSession) { session in
-                PhotoLibraryFrameAlignFlow(
-                    images: session.images,
-                    onComplete: { dataList in
-                        retryLibraryImages = session.images
-                        libraryAlignSession = nil
-                        Task {
-                            await processImagesForAlerts(dataList: dataList, fromIngredientBand: true)
-                        }
-                    },
-                    onCancel: {
-                        libraryAlignSession = nil
-                    }
-                )
-            }
             .onAppear {
                 DataBootstrap.seedIfNeeded(in: modelContext)
                 if isActive {
@@ -147,8 +131,23 @@ private struct CameraViewIOS: View {
 
             VStack(spacing: 0) {
                 HStack {
+                    if allowsDismiss {
+                        Button("關閉") { dismiss() }
+                            .font(.caption.weight(.semibold))
+                            .foregroundColor(.white)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 8)
+                            .background(Color.black.opacity(0.42), in: Capsule())
+                            .padding(.leading, 18)
+                    }
                     Spacer(minLength: 0)
+                    if showsPasteButton {
                     Button {
+                        guard FreeScanQuota.canStartCameraScan(isPremium: subscriptionStore.isPremium) else {
+                            paywallReason = .weeklyScanLimit
+                            showPaywall = true
+                            return
+                        }
                         showManualInput = true
                     } label: {
                         Label("貼上成分", systemImage: "doc.on.clipboard")
@@ -161,8 +160,9 @@ private struct CameraViewIOS: View {
                     .buttonStyle(.plain)
                     .accessibilityLabel("貼上成分表")
                     .padding(.trailing, 18)
-                    .padding(.top, 10)
+                    }
                 }
+                .padding(.top, 10)
 
                 if isFollowUpCaptureMode {
                     followUpCaptureBanner
@@ -214,6 +214,11 @@ private struct CameraViewIOS: View {
                         showUnclearResult = false
                         clearDeferredLowQuality()
                         resetCapturedImages()
+                        guard FreeScanQuota.canStartCameraScan(isPremium: subscriptionStore.isPremium) else {
+                            paywallReason = .weeklyScanLimit
+                            showPaywall = true
+                            return
+                        }
                         showManualInput = true
                     },
                     onRetake: {
@@ -221,9 +226,6 @@ private struct CameraViewIOS: View {
                         clearDeferredLowQuality()
                         latestScanPayload = nil
                         resetCapturedImages()
-                        if let session = PhotoLibraryAlignSession(images: retryLibraryImages) {
-                            libraryAlignSession = session
-                        }
                     },
                     onViewPartialResults: {
                         showUnclearResult = false
@@ -273,21 +275,6 @@ private struct CameraViewIOS: View {
                 isFollowUpCaptureMode = false
                 resetCapturedImages()
             }
-        }
-        .fullScreenCover(isPresented: $showPhotoLibraryPicker) {
-            PhotoLibraryPickerView(
-                cropsToIngredientBand: false,
-                onCapture: { data in
-                    showPhotoLibraryPicker = false
-                    if let image = UIImage(data: data) {
-                        libraryAlignSession = PhotoLibraryAlignSession(images: [image])
-                    }
-                },
-                onCancel: {
-                    showPhotoLibraryPicker = false
-                }
-            )
-            .ignoresSafeArea()
         }
         .sheet(isPresented: $showPaywall) {
             PaywallView(reason: paywallReason)
@@ -403,13 +390,13 @@ private struct CameraViewIOS: View {
     private var unavailableMessage: String {
         switch camera.unavailableReason {
         case .simulator:
-            return "Xcode 模擬器與 Preview 沒有實體鏡頭，請改從相簿選取照片，或使用 iPhone 實機測試。"
+            return "Xcode 模擬器與 Preview 沒有實體鏡頭，請使用 iPhone 實機測試。"
         case .permissionDenied:
             return "請到設定中允許相機存取，以便掃描成分表。"
         case .noDevice:
-            return "此裝置找不到可用相機，請改從相簿選取成分表照片。"
+            return "此裝置找不到可用相機。"
         case .none:
-            return "請改從相簿選取成分表照片。"
+            return "請使用 iPhone 實機拍攝成分表。"
         }
     }
 
@@ -445,8 +432,8 @@ private struct CameraViewIOS: View {
                     capturedCount: capturedImages.count,
                     isConfigured: camera.isConfigured,
                     isBusy: isScanning || isCapturingShot || isFinishingMultiShot || shotPendingAlign != nil,
-                    showsLibrary: true,
-                    onLibrary: openPhotoLibrary,
+                    showsLibrary: false,
+                    onLibrary: {},
                     onReset: resetCapturedImages,
                     onCapture: capturePhoto,
                     onFinish: {
@@ -537,12 +524,6 @@ private struct CameraViewIOS: View {
         case nil:
             break
         }
-    }
-
-    private func openPhotoLibrary() {
-        guard !isFollowUpCaptureMode else { return }
-        guard ensureCameraScanAllowed() else { return }
-        showPhotosPicker = true
     }
 
     private func ensureCameraScanAllowed() -> Bool {

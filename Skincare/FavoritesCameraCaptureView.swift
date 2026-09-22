@@ -201,11 +201,11 @@ struct FavoritesCameraCaptureView: View {
     private var unavailableMessage: String {
         switch camera.unavailableReason {
         case .simulator:
-            return "請改從相簿選取，或使用 iPhone 實機測試。"
+            return "請使用 iPhone 實機測試。"
         case .permissionDenied:
             return "請到設定允許相機存取。"
         default:
-            return "請改從相簿選取成分表照片。"
+            return "請使用 iPhone 實機拍攝成分表。"
         }
     }
 

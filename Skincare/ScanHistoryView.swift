@@ -41,18 +41,6 @@ enum ScanHistorySortFilter: String, CaseIterable, Identifiable {
     var id: String { rawValue }
 }
 
-/// 手動貼上成分後推入詳情用的導航值。
-private struct ManualIngredientRoute: Identifiable, Hashable {
-    let id = UUID()
-    let ingredients: [String]
-    let matchedAlerts: [String]
-    let blockedTags: [String]
-    let customBlockedIngredients: [String]
-    let productName: String
-    let historyRecordID: String?
-    let storedSnapshots: [PersistedScannedIngredient]
-}
-
 extension ScanHistoryRecordEntity {
     /// 與詳情頁「已辨識」一致：有快照時只計字典命中，不含灰色未收錄。
     var displayIdentifiedCount: Int {
@@ -82,6 +70,7 @@ struct ScanHistoryView: View {
     @Environment(\.modelContext) private var modelContext
     @EnvironmentObject private var subscriptionStore: SubscriptionStore
     @State private var showPaywall = false
+    @State private var paywallReason: PaywallReason = .favorites
 
     @Query(sort: \ScanHistoryRecordEntity.scannedAt, order: .reverse)
     private var recordEntities: [ScanHistoryRecordEntity]
@@ -91,9 +80,6 @@ struct ScanHistoryView: View {
 
     @State private var sortFilter: ScanHistorySortFilter = .newestFirst
     @State private var historyRefreshToken = UUID()
-    @State private var showManualInput = false
-    @State private var pendingManualPayload: ScanResultPayload?
-    @State private var pendingManualRoute: ManualIngredientRoute?
 
     @State private var isSelecting = false
     @State private var selectedRecordIDs: Set<String> = []
@@ -164,35 +150,12 @@ struct ScanHistoryView: View {
             } message: {
                 Text("此動作無法復原。")
             }
-            .fullScreenCover(isPresented: $showManualInput, onDismiss: {
-                DeferredModalPresentation.afterCoverDismiss {
-                    if let payload = pendingManualPayload {
-                        pendingManualPayload = nil
-                        openManualResult(payload)
-                    }
-                }
-            }) {
-                ManualInputView(source: .history) { payload in
-                    pendingManualPayload = payload
-                }
-            }
-            .navigationDestination(item: $pendingManualRoute) { route in
-                IngredientDetailListView(
-                    ingredients: route.ingredients,
-                    matchedAlerts: route.matchedAlerts,
-                    blockedTags: route.blockedTags,
-                    customBlockedIngredients: route.customBlockedIngredients,
-                    productName: route.productName,
-                    historyRecordID: route.historyRecordID,
-                    storedSnapshots: route.storedSnapshots
-                )
-            }
             .id(historyRefreshToken)
             .onAppear {
                 DataBootstrap.seedIfNeeded(in: modelContext)
             }
             .sheet(isPresented: $showPaywall) {
-                PaywallView(reason: .favorites)
+                PaywallView(reason: paywallReason)
             }
             .onReceive(NotificationCenter.default.publisher(for: .didClearScanHistory)) { _ in
                 historyRefreshToken = UUID()
@@ -249,6 +212,7 @@ struct ScanHistoryView: View {
                         .swipeActions(edge: .leading, allowsFullSwipe: true) {
                             Button {
                                 guard subscriptionStore.isPremium else {
+                                    paywallReason = .favorites
                                     showPaywall = true
                                     return
                                 }
@@ -319,20 +283,6 @@ struct ScanHistoryView: View {
                 .disabled(recordEntities.isEmpty && !isSelecting)
                 .opacity(recordEntities.isEmpty && !isSelecting ? 0.45 : 1)
                 .accessibilityLabel(isSelecting ? "完成選取" : "選取掃描紀錄")
-
-                if !isSelecting {
-                    Button {
-                        showManualInput = true
-                    } label: {
-                        Image(systemName: "plus")
-                            .font(.title3.weight(.medium))
-                            .foregroundColor(Theme.ink)
-                            .frame(width: 36, height: 36)
-                            .contentShape(Rectangle())
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel("貼上成分表")
-                }
             }
         }
     }
@@ -367,42 +317,6 @@ struct ScanHistoryView: View {
         .shadow(color: .black.opacity(0.22), radius: 16, y: 6)
     }
 
-    private func openManualResult(_ payload: ScanResultPayload) {
-        guard payload.identifiedIngredientCount > 0 else { return }
-
-        let title: String = {
-            let fromPayload = payload.productName.trimmingCharacters(in: .whitespacesAndNewlines)
-            if !fromPayload.isEmpty {
-                return fromPayload
-            }
-            if let id = payload.historyRecordID {
-                let descriptor = FetchDescriptor<ScanHistoryRecordEntity>(
-                    predicate: #Predicate { $0.recordID == id }
-                )
-                if let entity = try? modelContext.fetch(descriptor).first {
-                    return entity.title
-                }
-            }
-            return payload.resolvedProductName
-        }()
-
-        let route = ManualIngredientRoute(
-            ingredients: payload.ingredients,
-            matchedAlerts: payload.matchedAlerts,
-            blockedTags: payload.blockedTags,
-            customBlockedIngredients: payload.customBlockedIngredients,
-            productName: title,
-            historyRecordID: payload.historyRecordID,
-            storedSnapshots: payload.resolvedIngredients
-        )
-
-        if !payload.matchedAlerts.isEmpty {
-            ScanAlertHaptics.triggerWarning()
-        }
-
-        pendingManualRoute = route
-    }
-
     private var sortFilterMenu: some View {
         Menu {
             ForEach(ScanHistorySortFilter.allCases) { option in
@@ -430,7 +344,7 @@ struct ScanHistoryView: View {
             Text("尚無掃描紀錄")
                 .font(.headline)
                 .foregroundColor(Theme.ink)
-            Text("使用相機掃描，或點右上角「＋」貼上成分表。")
+            Text("到中間的「貼上」貼上成分表。相機在貼上頁裡，密排可能拍不完整。兩者共用每週免費次數。")
                 .font(.subheadline)
                 .foregroundColor(Theme.muted)
                 .multilineTextAlignment(.center)

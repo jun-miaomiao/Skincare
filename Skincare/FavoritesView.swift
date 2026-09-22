@@ -44,17 +44,10 @@ struct FavoritesView: View {
 
     @State private var selectedSegment: FavoritesSegment = .products
     @State private var sortOrder: FavoritesSortOrder = .newestFirst
-    @State private var showScanActions = false
     @State private var showManualInput = false
     @State private var pendingManualPayload: ScanResultPayload?
     @State private var showPaywall = false
-
-    /// 獨立狀態：拍照 vs 相簿，互不共用、不相牽連。
-    @State private var isCameraPresented = false
-    @State private var isPhotoPickerPresented = false
-    @State private var isLegacyPhotoLibraryPresented = false
-    @State private var libraryAlignSession: PhotoLibraryAlignSession?
-    @State private var retryLibraryImages: [UIImage] = []
+    @State private var paywallReason: PaywallReason = .favorites
 
     @State private var isScanning = false
     @State private var scanningUsesMultiAngleCopy = false
@@ -121,22 +114,6 @@ struct FavoritesView: View {
             rootContent
                 .navigationTitle("")
                 .navigationBarTitleDisplayMode(.inline)
-                .confirmationDialog("新增辨識", isPresented: $showScanActions, titleVisibility: .visible) {
-                    Button("拍照辨識") {
-                        guard ensurePremiumForFavorites() else { return }
-                        isCameraPresented = true
-                    }
-                    Button("從相簿選取") {
-                        guard ensurePremiumForFavorites() else { return }
-                        presentPhotoPickerOnly()
-                    }
-                    Button("貼上成分表") {
-                        showManualInput = true
-                    }
-                    Button("取消", role: .cancel) {}
-                } message: {
-                    Text("拍照與相簿寫入最愛需訂閱；貼上成分表可先免費分析。")
-                }
                 .confirmationDialog(
                     "確定刪除所選的 \(selectedCount) 筆收藏？",
                     isPresented: $showDeleteSelectedConfirmation,
@@ -160,17 +137,6 @@ struct FavoritesView: View {
                     ManualInputView(source: .favorites) { payload in
                         pendingManualPayload = payload
                     }
-                }
-                .fullScreenCover(isPresented: $isCameraPresented) {
-                    FavoritesCameraCaptureView(
-                        onCapturedPayload: { payload in
-                            isCameraPresented = false
-                            presentScanResult(payload)
-                        },
-                        onCancel: {
-                            isCameraPresented = false
-                        }
-                    )
                 }
                 .sheet(isPresented: $showScanSummarySheet, onDismiss: handleSummaryDismissed) {
                     if let payload = latestScanPayload {
@@ -222,52 +188,12 @@ struct FavoritesView: View {
                         }
                     )
                 }
-                .fullScreenCover(isPresented: $isLegacyPhotoLibraryPresented) {
-                    #if os(iOS)
-                    PhotoLibraryPickerView(
-                        cropsToIngredientBand: false,
-                        onCapture: { data in
-                            isLegacyPhotoLibraryPresented = false
-                            if let image = UIImage(data: data) {
-                                libraryAlignSession = PhotoLibraryAlignSession(images: [image])
-                            }
-                        },
-                        onCancel: {
-                            isLegacyPhotoLibraryPresented = false
-                        }
-                    )
-                    .ignoresSafeArea()
-                    #endif
-                }
-                .fullScreenCover(item: $libraryAlignSession) { session in
-                    #if os(iOS)
-                    PhotoLibraryFrameAlignFlow(
-                        images: session.images,
-                        onComplete: { dataList in
-                            retryLibraryImages = session.images
-                            libraryAlignSession = nil
-                            Task { await processImages(dataList) }
-                        },
-                        onCancel: {
-                            libraryAlignSession = nil
-                        }
-                    )
-                    #endif
-                }
                 .onAppear {
                     DataBootstrap.seedIfNeeded(in: modelContext)
                 }
                 .sheet(isPresented: $showPaywall) {
-                    PaywallView(reason: .favorites)
+                    PaywallView(reason: paywallReason)
                 }
-                .modifier(
-                    FavoritesPhotosPickerModifier(
-                        isPresented: $isPhotoPickerPresented,
-                        onPickedImages: { images in
-                            libraryAlignSession = PhotoLibraryAlignSession(images: images)
-                        }
-                    )
-                )
                 .navigationDestination(item: $ingredientDetailRoute) { route in
                     IngredientDetailListView(
                         ingredients: route.ingredients,
@@ -368,16 +294,12 @@ struct FavoritesView: View {
                     onManualInput: {
                         showUnclearResult = false
                         pendingFavoriteScan = nil
-                        showManualInput = true
+                        openPasteComposer()
                     },
                     onRetake: {
                         showUnclearResult = false
                         pendingFavoriteScan = nil
-                        if let session = PhotoLibraryAlignSession(images: retryLibraryImages) {
-                            libraryAlignSession = session
-                        } else {
-                            isPhotoPickerPresented = true
-                        }
+                        openPasteComposer()
                     },
                     onViewPartialResults: {
                         showUnclearResult = false
@@ -448,7 +370,7 @@ struct FavoritesView: View {
                             .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
-                    .accessibilityLabel(selectedSegment == .products ? "新增保養品辨識" : "新增最愛成分")
+                    .accessibilityLabel(selectedSegment == .products ? "貼上成分表" : "新增最愛成分")
                 }
             }
         }
@@ -527,14 +449,9 @@ struct FavoritesView: View {
         }
     }
 
-    private func presentPhotoPickerOnly() {
-        // 僅開相簿，絕不啟動相機 Session / Cover
-        isCameraPresented = false
-        isPhotoPickerPresented = true
-    }
-
     private func ensurePremiumForFavorites() -> Bool {
         if subscriptionStore.isPremium { return true }
+        paywallReason = .favorites
         showPaywall = true
         return false
     }
@@ -542,7 +459,7 @@ struct FavoritesView: View {
     private func handlePlusTapped() {
         switch selectedSegment {
         case .products:
-            showScanActions = true
+            openPasteComposer()
         case .ingredients:
             guard ensurePremiumForFavorites() else { return }
             ingredientSearchDraft = ""
@@ -570,9 +487,16 @@ struct FavoritesView: View {
         return true
     }
 
+    private func openPasteComposer() {
+        guard FreeScanQuota.canStartCameraScan(isPremium: subscriptionStore.isPremium) else {
+            paywallReason = .weeklyScanLimit
+            showPaywall = true
+            return
+        }
+        showManualInput = true
+    }
+
     private func handleSummaryDismissed() {
-        isCameraPresented = false
-        isPhotoPickerPresented = false
         showAvoidAlert = false
 
         if pendingOpenIngredientDetail, let payload = latestScanPayload {
@@ -623,7 +547,7 @@ struct FavoritesView: View {
 
         guard payload.identifiedIngredientCount > 0 else { return }
 
-        // 貼上可免費看結果；寫入最愛需訂閱。
+        // 貼上與拍照共用每週次數；寫入最愛需訂閱。
         if !subscriptionStore.isPremium {
             var freeView = payload
             freeView.source = .history
@@ -682,9 +606,6 @@ struct FavoritesView: View {
     @MainActor
     private func processImages(_ dataList: [Data]) async {
         guard let primary = dataList.first else { return }
-        // 相簿選擇器已關閉；略過中間結果／風險確認，辨識完直接命名。
-        isPhotoPickerPresented = false
-        isLegacyPhotoLibraryPresented = false
         scanningUsesMultiAngleCopy = dataList.count > 1
         isScanning = true
         showAvoidAlert = false
@@ -913,24 +834,6 @@ private struct FavoriteNameSaveSheet: View {
     }
 }
 
-// MARK: - Photos-only picker（不碰相機）
-
-private struct FavoritesPhotosPickerModifier: ViewModifier {
-    @Binding var isPresented: Bool
-    let onPickedImages: ([UIImage]) -> Void
-
-    func body(content: Content) -> some View {
-        content
-            .modifier(
-                ModernPhotosPickerModifier(
-                    isPresented: $isPresented,
-                    maxSelectionCount: ModernPhotoLoader.maxSelectionCount,
-                    onPickedImages: onPickedImages
-                )
-            )
-    }
-}
-
 private struct FavoriteProductsPage: View {
     let records: [FavoriteProductRecord]
     var isSelecting: Bool = false
@@ -938,6 +841,8 @@ private struct FavoriteProductsPage: View {
     let onDelete: (IndexSet) -> Void
 
     @State private var routinePickerRecordID: String?
+    @State private var openedProductID: String?
+    @State private var suppressOpenAfterLongPress = false
 
     var body: some View {
         Group {
@@ -962,22 +867,25 @@ private struct FavoriteProductsPage: View {
                                 }
                                 .buttonStyle(.plain)
                             } else {
-                                ZStack(alignment: .leading) {
-                                    NavigationLink {
-                                        FavoriteDetailView(record: record)
-                                    } label: {
-                                        EmptyView()
+                                Button {
+                                    guard !suppressOpenAfterLongPress else {
+                                        suppressOpenAfterLongPress = false
+                                        return
                                     }
-                                    .opacity(0)
-                                    .accessibilityHidden(true)
-
+                                    openedProductID = record.recordID
+                                } label: {
                                     CompactFavoriteProductCard(record: record)
-                                        .allowsHitTesting(false)
                                 }
-                                .contentShape(Rectangle())
-                                .onLongPressGesture(minimumDuration: 0.45) {
-                                    routinePickerRecordID = record.recordID
-                                }
+                                .buttonStyle(.plain)
+                                .simultaneousGesture(
+                                    LongPressGesture(minimumDuration: 0.45).onEnded { _ in
+                                        suppressOpenAfterLongPress = true
+                                        routinePickerRecordID = record.recordID
+                                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
+                                            suppressOpenAfterLongPress = false
+                                        }
+                                    }
+                                )
                                 .swipeActions(edge: .trailing, allowsFullSwipe: true) {
                                     Button(role: .destructive) {
                                         deleteRecord(record)
@@ -996,6 +904,11 @@ private struct FavoriteProductsPage: View {
                 .listStyle(.plain)
                 .scrollContentBackground(.hidden)
                 .background(Theme.background)
+                .navigationDestination(item: $openedProductID) { recordID in
+                    if let record = records.first(where: { $0.recordID == recordID }) {
+                        FavoriteDetailView(record: record)
+                    }
+                }
                 .safeAreaInset(edge: .bottom) {
                     if isSelecting {
                         Color.clear.frame(height: 72)
@@ -1065,6 +978,8 @@ private struct FavoriteIngredientsPage: View {
     @Binding var selectedRecordIDs: Set<String>
     let onDelete: (IndexSet) -> Void
 
+    @State private var openedIngredientID: String?
+
     var body: some View {
         Group {
             if records.isEmpty {
@@ -1088,19 +1003,12 @@ private struct FavoriteIngredientsPage: View {
                                     }
                                     .buttonStyle(.plain)
                                 } else {
-                                    ZStack(alignment: .leading) {
-                                        NavigationLink {
-                                            IngredientDetailView(ingredient: item.ingredient)
-                                        } label: {
-                                            EmptyView()
-                                        }
-                                        .opacity(0)
-                                        .accessibilityHidden(true)
-
+                                    Button {
+                                        openedIngredientID = record.recordID
+                                    } label: {
                                         IngredientCard(ingredient: item.ingredient)
-                                            .allowsHitTesting(false)
                                     }
-                                    .contentShape(Rectangle())
+                                    .buttonStyle(.plain)
                                     .swipeActions(edge: .trailing, allowsFullSwipe: true) {
                                         Button(role: .destructive) {
                                             deleteRecord(record)
@@ -1120,6 +1028,12 @@ private struct FavoriteIngredientsPage: View {
                 .listStyle(.plain)
                 .scrollContentBackground(.hidden)
                 .background(Theme.background)
+                .navigationDestination(item: $openedIngredientID) { recordID in
+                    if let record = records.first(where: { $0.recordID == recordID }),
+                       let item = record.displayItem() {
+                        IngredientDetailView(ingredient: item.ingredient)
+                    }
+                }
                 .safeAreaInset(edge: .bottom) {
                     if isSelecting {
                         Color.clear.frame(height: 72)

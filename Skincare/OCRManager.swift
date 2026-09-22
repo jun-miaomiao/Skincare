@@ -53,8 +53,8 @@ class OCRManager {
         }
 
         let whole = await recognizePrepared(prepared)
-        // 白框是扁的。整框一起認時，密排小字矮於 Vision 預設，常常只剩最後一行。
-        // 橫向重疊切片後每一行變高，行數變多才採用。
+        // 白框是扁的。整框一起認時，密排小字佔整張圖太矮，中間會整段消失。
+        // 切成較矮、上下重疊的橫帶後，每一行在那一條裡變高；行數變多才採用。
         guard prepared.size.width > prepared.size.height * 1.15 else {
             return whole
         }
@@ -63,20 +63,26 @@ class OCRManager {
     }
 
     private func recognizeHorizontalBands(_ image: UIImage) async -> OCRRecognitionResult {
-        let bandCount = 3
-        let bandHeightRatio: CGFloat = 0.5
-        let step = (1 - bandHeightRatio) / CGFloat(bandCount - 1)
+        // 每條約三分之一高，下一條往下移一半，避免一行被切在邊界上。
+        let bandHeightRatio: CGFloat = 0.34
+        let stepRatio: CGFloat = 0.17
         var lines: [OCRLineResult] = []
         var seen = Set<String>()
 
-        for index in 0..<bandCount {
-            let y = image.size.height * step * CGFloat(index)
+        var index = 0
+        while index < 8 {
+            let yRatio = stepRatio * CGFloat(index)
+            if yRatio >= 0.995 { break }
+            let heightRatio = min(bandHeightRatio, 1 - yRatio)
+            if heightRatio < 0.12 { break }
+            let y = image.size.height * yRatio
             let rect = CGRect(
                 x: 0,
                 y: y,
                 width: image.size.width,
-                height: image.size.height * bandHeightRatio
+                height: image.size.height * heightRatio
             )
+            index += 1
             guard let slice = Self.crop(image, to: rect) else { continue }
             let prepared = Self.prepareImageForOCR(slice, maxLongEdge: Self.ingredientBandLongEdge)
             let result = await recognizePrepared(prepared)
@@ -125,10 +131,10 @@ class OCRManager {
         }.value
     }
 
-    /// Vision 會丟掉貼在圖片邊緣的字。四邊留白，讓第一行的水還在畫面裡。
+    /// Vision 會丟掉貼在圖片邊緣的字。只留一條細邊，避免把每一行墊矮。
     private static func insetSoEdgeLinesAreReadable(_ image: UIImage) -> UIImage {
-        let padY = max(image.size.height * 0.08, 24)
-        let padX = max(image.size.width * 0.03, 12)
+        let padY = max(image.size.height * 0.012, 8)
+        let padX = max(image.size.width * 0.012, 8)
         let canvas = CGSize(width: image.size.width + padX * 2, height: image.size.height + padY * 2)
         let format = UIGraphicsImageRendererFormat()
         format.scale = 1
