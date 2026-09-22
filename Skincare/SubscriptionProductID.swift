@@ -8,24 +8,22 @@ enum SubscriptionProductID: String, CaseIterable, Identifiable {
 
     var id: String { rawValue }
 
-    /// 畫面排序：月費 → 年費（推薦）→ 終身早鳥。
+    /// 畫面只賣月費和終身。年費不再上架，識別碼留著以便還原購買。
     static var storeDisplayOrder: [SubscriptionProductID] {
-        [.monthly, .yearly, .lifetime]
+        [.monthly, .lifetime]
     }
 
     var marketingTitle: String {
         switch self {
         case .monthly: return "月費"
         case .yearly: return "年費"
-        case .lifetime: return "終身早鳥"
+        case .lifetime: return "終身"
         }
     }
 
     var marketingSubtitle: String {
         switch self {
-        case .monthly: return ""
-        case .yearly: return ""
-        case .lifetime: return "限量 200 名"
+        case .monthly, .yearly, .lifetime: return ""
         }
     }
 
@@ -34,7 +32,7 @@ enum SubscriptionProductID: String, CaseIterable, Identifiable {
         switch self {
         case .monthly: return "NT$60／月"
         case .yearly: return "NT$490／年"
-        case .lifetime: return "NT$690"
+        case .lifetime: return "NT$390"
         }
     }
 
@@ -43,6 +41,6 @@ enum SubscriptionProductID: String, CaseIterable, Identifiable {
     }
 
     var isFeatured: Bool {
-        self == .yearly
+        self == .lifetime
     }
 }

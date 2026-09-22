@@ -495,25 +495,24 @@ struct IngredientDetailListView: View {
 
     // MARK: - Prepare
 
-    /// 歷史／最愛：直接讀快照；警示比對一律背景計算後快取，避免 body 重複運算。
+    /// 歷史／最愛：風險開關與自訂清單沒變就用上次結果，不再重算、也不再把項目往上挪。
     @MainActor
     private func loadRowsForPresentation() {
+        if reuseStoredEvaluationIfPossible() {
+            return
+        }
+
         if !storedSnapshots.isEmpty {
             let items = storedSnapshots.map { snap in
                 ScannedIngredientItem(
                     name: snap.name,
                     originalOrder: snap.originalOrder,
-                    isBlocked: IngredientRiskEvaluator.isRiskWarning(
-                        name: snap.name,
-                        databaseItem: snap.databaseItem,
-                        blockedTags: blockedTags,
-                        customIngredients: customBlockedIngredients,
-                        alerts: matchedAlerts
-                    ),
+                    isBlocked: snap.isBlocked,
                     databaseItem: snap.databaseItem
                 )
             }
-            applyItemsInstantly(items)
+            orderedItems = items
+            Task { await rebuildAlertCache(for: items) }
             return
         }
 
@@ -640,6 +639,183 @@ struct IngredientDetailListView: View {
         cachedRegularItems = matched
         cachedUnmatchedItems = unmatched
         applyDefaultUnmatchedExpansionIfNeeded()
+        isPreparing = false
+        persistAlertEvaluation(items: reconciled, report: report)
+    }
+
+    /// 這份風險開關與自訂清單已經算過，直接擺上上次的順序。
+    @MainActor
+    private func reuseStoredEvaluationIfPossible() -> Bool {
+        guard let profile else { return false }
+        let key = AlertEvaluationKey.make(
+            blockedTags: profile.blockedTags,
+            customBlockedIngredients: profile.customBlockedIngredients,
+            skinType: profile.skinType,
+            isSensitiveSkin: profile.isSensitiveSkin
+        )
+        guard !key.isEmpty, storedAlertEvaluationKey() == key, !storedSnapshots.isEmpty else {
+            return false
+        }
+
+        let items = storedSnapshots.map { snap in
+            ScannedIngredientItem(
+                name: snap.name,
+                originalOrder: snap.originalOrder,
+                isBlocked: snap.highlightRank < 9 || snap.isBlocked,
+                databaseItem: snap.databaseItem
+            )
+        }
+        cachedAlertReport = restoredReport(from: storedSnapshots)
+        orderedItems = items
+        let rankByOrder = Dictionary(uniqueKeysWithValues: storedSnapshots.map { ($0.originalOrder, $0.highlightRank) })
+        let blocked = items
+            .filter { rankByOrder[$0.originalOrder, default: 9] < 9 || $0.isBlocked }
+            .sorted { lhs, rhs in
+                let lp = rankByOrder[lhs.originalOrder, default: 9]
+                let rp = rankByOrder[rhs.originalOrder, default: 9]
+                if lp != rp { return lp < rp }
+                return lhs.originalOrder < rhs.originalOrder
+            }
+        let blockedIDs = Set(blocked.map(\.id))
+        cachedBlockedItems = blocked
+        cachedRegularItems = items
+            .filter { !blockedIDs.contains($0.id) && $0.databaseItem != nil }
+            .sorted { $0.originalOrder < $1.originalOrder }
+        cachedUnmatchedItems = items
+            .filter { !blockedIDs.contains($0.id) && $0.databaseItem == nil }
+            .sorted { $0.originalOrder < $1.originalOrder }
+        applyDefaultUnmatchedExpansionIfNeeded()
+        isPreparing = false
+        return true
+    }
+
+    private func storedAlertEvaluationKey() -> String {
+        if let favoriteRecordID, !favoriteRecordID.isEmpty {
+            let descriptor = FetchDescriptor<FavoriteProductRecord>()
+            let records = (try? modelContext.fetch(descriptor)) ?? []
+            return records.first { $0.recordID == favoriteRecordID }?.alertEvaluationKey ?? ""
+        }
+        if let historyRecordID, !historyRecordID.isEmpty {
+            let descriptor = FetchDescriptor<ScanHistoryRecordEntity>()
+            let records = (try? modelContext.fetch(descriptor)) ?? []
+            return records.first { $0.recordID == historyRecordID }?.alertEvaluationKey ?? ""
+        }
+        return ""
+    }
+
+    private func restoredReport(from snapshots: [PersistedScannedIngredient]) -> IngredientAlertReport {
+        var annotations: [IngredientAlertAnnotation] = []
+        for snap in snapshots {
+            let tags = snap.storedAlertTags.compactMap(IngredientAlertTag.init(stored:))
+            guard !tags.isEmpty else { continue }
+            let key = SkinSuitabilityEngine.matchKey(name: snap.name, databaseItem: snap.databaseItem)
+            annotations.append(
+                IngredientAlertAnnotation(
+                    ingredientKey: key,
+                    displayName: snap.name,
+                    matchedCustomNames: [],
+                    toggleRiskTitles: [],
+                    skinFlags: [],
+                    skinReasons: tags.map(\.reason),
+                    tags: tags
+                )
+            )
+        }
+        return IngredientAlertReport(
+            blockedTags: blockedTags,
+            customBlockedIngredients: customBlockedIngredients,
+            matchedAlertMessages: matchedAlerts,
+            skinReport: SkinSuitabilityReport(
+                skinType: profile?.skinType ?? .combination,
+                isSensitiveSkin: profile?.isSensitiveSkin ?? false,
+                hits: []
+            ),
+            annotations: annotations
+        )
+    }
+
+    @MainActor
+    private func persistAlertEvaluation(items: [ScannedIngredientItem], report: IngredientAlertReport) {
+        guard let profile else { return }
+        guard (favoriteRecordID?.isEmpty == false) || (historyRecordID?.isEmpty == false) else { return }
+        let key = AlertEvaluationKey.make(
+            blockedTags: profile.blockedTags,
+            customBlockedIngredients: profile.customBlockedIngredients,
+            skinType: profile.skinType,
+            isSensitiveSkin: profile.isSensitiveSkin
+        )
+        let snapshots = items
+            .sorted { $0.originalOrder < $1.originalOrder }
+            .map { item -> PersistedScannedIngredient in
+                let annotation = report.annotation(forName: item.name, databaseItem: item.databaseItem)
+                let rank = item.isBlocked ? (annotation?.sortPriority ?? 1) : 9
+                return PersistedScannedIngredient(
+                    name: item.databaseItem?.englishName ?? item.name,
+                    originalOrder: item.originalOrder,
+                    isBlocked: item.isBlocked,
+                    databaseItem: item.databaseItem,
+                    storedAlertTags: (annotation?.tags ?? []).map(PersistedAlertTag.init(tag:)),
+                    highlightRank: rank
+                )
+            }
+        let alerts = capsuleAlerts(from: report)
+        let tags = profile.blockedTags
+        let custom = profile.customBlockedIngredients
+
+        if let favoriteRecordID, !favoriteRecordID.isEmpty {
+            let descriptor = FetchDescriptor<FavoriteProductRecord>()
+            if let record = ((try? modelContext.fetch(descriptor)) ?? []).first(where: { $0.recordID == favoriteRecordID }) {
+                record.resolvedIngredientsRaw = ScanRecordCodec.encodeSnapshots(snapshots)
+                record.matchedIngredientsRaw = ScanRecordCodec.encode(alerts)
+                record.blockedTagsRaw = ScanRecordCodec.encode(tags)
+                record.customBlockedIngredientsRaw = ScanRecordCodec.encode(custom)
+                record.alertEvaluationKey = key
+                record.highlight = alerts.isEmpty
+                    ? "共 \(snapshots.count) 項成分"
+                    : "命中 \(alerts.count) 項風險成分"
+                record.accentRed = alerts.isEmpty ? 0.55 : 0.78
+                record.accentGreen = alerts.isEmpty ? 0.62 : 0.48
+                record.accentBlue = alerts.isEmpty ? 0.54 : 0.42
+            }
+        }
+
+        if let historyRecordID, !historyRecordID.isEmpty {
+            let descriptor = FetchDescriptor<ScanHistoryRecordEntity>()
+            if let record = ((try? modelContext.fetch(descriptor)) ?? []).first(where: { $0.recordID == historyRecordID }) {
+                record.resolvedIngredientsRaw = ScanRecordCodec.encodeSnapshots(snapshots)
+                record.matchedIngredientsRaw = ScanRecordCodec.encode(alerts)
+                record.blockedTagsRaw = ScanRecordCodec.encode(tags)
+                record.alertEvaluationKey = key
+                record.summary = ScanHistoryWriter.makeSummary(
+                    ingredientCount: snapshots.count,
+                    matchedCount: alerts.count
+                )
+            }
+        }
+
+        try? modelContext.save()
+    }
+
+    private func capsuleAlerts(from report: IngredientAlertReport) -> [String] {
+        var toggleTitles: [String] = []
+        var customNames: [String] = []
+        for annotation in report.annotations {
+            for title in annotation.toggleRiskTitles where !toggleTitles.contains(title) {
+                toggleTitles.append(title)
+            }
+            for name in annotation.matchedCustomNames where !customNames.contains(name) {
+                customNames.append(name)
+            }
+        }
+        var alerts: [String] = []
+        for option in AvoidIngredientOption.all where toggleTitles.contains(option.title) {
+            alerts.append("\(option.title)（\(option.title)）")
+        }
+        alerts.append(contentsOf: SkinCautionCapsule.labels(in: report.skinReport))
+        for name in customNames {
+            alerts.append("自訂風險（\(name)）")
+        }
+        return alerts
     }
 
     @MainActor

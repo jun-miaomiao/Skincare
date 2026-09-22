@@ -15,9 +15,6 @@ final class SubscriptionStore: ObservableObject {
     /// 開發用：略過 StoreKit，方便本機驗付費牆。
     @Published var debugPremiumUnlocked = false
 
-    /// 終身早鳥下架後改 `false`，畫面上只留月／年。
-    @Published var lifetimeEarlyBirdAvailable = true
-
     private var updatesTask: Task<Void, Never>?
 
     var isPremium: Bool {
@@ -84,10 +81,7 @@ final class SubscriptionStore: ObservableObject {
     }
 
     func visibleProductIDs() -> [SubscriptionProductID] {
-        SubscriptionProductID.storeDisplayOrder.filter { id in
-            if id == .lifetime, !lifetimeEarlyBirdAvailable { return false }
-            return true
-        }
+        SubscriptionProductID.storeDisplayOrder
     }
 
     @discardableResult

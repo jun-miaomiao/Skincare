@@ -239,8 +239,7 @@ enum IngredientMatcher {
             let trimmed = custom.trimmingCharacters(in: .whitespacesAndNewlines)
             guard !trimmed.isEmpty else { continue }
             let needle = normalizedForMatching(trimmed)
-            // 過短英文避免誤傷；中日韓等可較短。
-            guard needle.count >= 5 || needle.unicodeScalars.contains(where: { !$0.isASCII }) else { continue }
+            guard !needle.isEmpty else { continue }
 
             let found = ingredients.contains { ingredient in
                 let db = IngredientDatabaseManager.shared.lookup(ingredientName: ingredient)

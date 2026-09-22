@@ -103,7 +103,8 @@ struct IngredientAlertAnnotation: Hashable, Sendable {
 
     var hasPersonalCustom: Bool { !matchedCustomNames.isEmpty }
     var hasToggleRisk: Bool { !toggleRiskTitles.isEmpty }
-    var hasHighlightAlert: Bool { hasPersonalCustom || hasToggleRisk }
+    var hasSkinCaution: Bool { skinFlags.contains(where: \.isCaution) }
+    var hasHighlightAlert: Bool { hasPersonalCustom || hasToggleRisk || hasSkinCaution }
 
     /// 排序權重：數字越小越靠前。
     var sortPriority: Int {

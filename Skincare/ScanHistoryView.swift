@@ -75,6 +75,8 @@ struct ScanHistoryView: View {
     @Query(sort: \ScanHistoryRecordEntity.scannedAt, order: .reverse)
     private var recordEntities: [ScanHistoryRecordEntity]
 
+    @Query private var profileList: [UserProfile]
+
     @Query(sort: \FavoriteProductRecord.createdAt, order: .reverse)
     private var favoriteProducts: [FavoriteProductRecord]
 
@@ -153,6 +155,7 @@ struct ScanHistoryView: View {
             .id(historyRefreshToken)
             .onAppear {
                 DataBootstrap.seedIfNeeded(in: modelContext)
+                SavedAlertSync.refreshStoredAlerts(profile: profileList.first, in: modelContext)
             }
             .sheet(isPresented: $showPaywall) {
                 PaywallView(reason: paywallReason)
@@ -188,7 +191,7 @@ struct ScanHistoryView: View {
                                     ingredients: entity.recognizedIngredients,
                                     matchedAlerts: entity.matchedIngredients,
                                     blockedTags: entity.blockedTags,
-                                    customBlockedIngredients: [],
+                                    customBlockedIngredients: profileList.first?.customBlockedIngredients ?? [],
                                     productName: entity.title,
                                     historyRecordID: entity.recordID,
                                     storedSnapshots: entity.resolvedIngredients

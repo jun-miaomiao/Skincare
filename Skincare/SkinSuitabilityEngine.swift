@@ -340,18 +340,11 @@ enum SkinSuitabilityEngine {
             let key = matchKey(name: display, databaseItem: dbItem)
 
             if isSensitiveSkin {
-                // 成分提醒已開 → 改由紅色警示；此處僅補橘色「額外」提醒
-                let skipFragrance = enabledAlertTags.contains("artificial-fragrance")
-                let skipAlcohol = enabledAlertTags.contains("denatured-alcohol")
-                let skipAcids = enabledAlertTags.contains("acids")
                 if let hit = sensitiveCautionHit(
                     displayName: display,
                     key: key,
                     databaseItem: dbItem,
-                    listIndex: index,
-                    skipFragrance: skipFragrance,
-                    skipAlcohol: skipAlcohol,
-                    skipAcids: skipAcids
+                    listIndex: index
                 ) {
                     appendUnique(hit, into: &hits, seen: &seen)
                 }

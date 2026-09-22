@@ -270,6 +270,8 @@ final class FavoriteProductRecord {
     var ingredientCount: Int = 0
     /// 保養時段：`morning` / `evening`；空字串＝未設定（仍顯示星星）。
     var routineSlotRaw: String = ""
+    /// 上次詳情比對時的風險開關與自訂清單。空字串代表還沒用這份設定算過。
+    var alertEvaluationKey: String = ""
     var createdAt: Date = Date()
 
     init(
@@ -289,7 +291,8 @@ final class FavoriteProductRecord {
         customBlockedIngredientsRaw: String = "[]",
         resolvedIngredientsRaw: String = "[]",
         ingredientCount: Int = 0,
-        routineSlotRaw: String = ""
+        routineSlotRaw: String = "",
+        alertEvaluationKey: String = ""
     ) {
         self.recordID = recordID
         self.brand = brand
@@ -308,6 +311,7 @@ final class FavoriteProductRecord {
         self.resolvedIngredientsRaw = resolvedIngredientsRaw
         self.ingredientCount = ingredientCount
         self.routineSlotRaw = routineSlotRaw
+        self.alertEvaluationKey = alertEvaluationKey
         self.createdAt = Date()
     }
 
@@ -583,6 +587,7 @@ enum FavoriteManager {
         entity.highlight = matchedIngredients.isEmpty
             ? "共 \(ingredients.count) 項成分"
             : "命中 \(matchedIngredients.count) 項風險成分"
+        entity.alertEvaluationKey = ""
         try? context.save()
     }
 
@@ -758,6 +763,8 @@ final class ScanHistoryRecordEntity {
     var imageCacheData: Data? = nil
     var isRead: Bool = false
     var createdAt: Date = Date()
+    /// 上次詳情比對時的風險開關與自訂清單。空字串代表還沒用這份設定算過。
+    var alertEvaluationKey: String = ""
 
     init(
         recordID: String = UUID().uuidString,
@@ -771,7 +778,8 @@ final class ScanHistoryRecordEntity {
         blockedTagsRaw: String = "[]",
         resolvedIngredientsRaw: String = "[]",
         imageCacheData: Data? = nil,
-        isRead: Bool = false
+        isRead: Bool = false,
+        alertEvaluationKey: String = ""
     ) {
         self.recordID = recordID
         self.title = title
@@ -786,6 +794,7 @@ final class ScanHistoryRecordEntity {
         self.imageCacheData = imageCacheData
         self.isRead = isRead
         self.createdAt = Date()
+        self.alertEvaluationKey = alertEvaluationKey
     }
 
     var status: ScanHistoryStatus {
@@ -815,6 +824,55 @@ struct PersistedScannedIngredient: Codable, Hashable, Sendable {
     var originalOrder: Int
     var isBlocked: Bool
     var databaseItem: IngredientItem?
+    /// 詳情上次算完的標籤。舊快照沒有這個欄位。
+    var storedAlertTags: [PersistedAlertTag] = []
+    /// 優先留意排序。9 代表不在優先留意。
+    var highlightRank: Int = 9
+
+    init(
+        name: String,
+        originalOrder: Int,
+        isBlocked: Bool,
+        databaseItem: IngredientItem?,
+        storedAlertTags: [PersistedAlertTag] = [],
+        highlightRank: Int = 9
+    ) {
+        self.name = name
+        self.originalOrder = originalOrder
+        self.isBlocked = isBlocked
+        self.databaseItem = databaseItem
+        self.storedAlertTags = storedAlertTags
+        self.highlightRank = highlightRank
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case name
+        case originalOrder
+        case isBlocked
+        case databaseItem
+        case storedAlertTags
+        case highlightRank
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        name = try container.decode(String.self, forKey: .name)
+        originalOrder = try container.decode(Int.self, forKey: .originalOrder)
+        isBlocked = try container.decode(Bool.self, forKey: .isBlocked)
+        databaseItem = try container.decodeIfPresent(IngredientItem.self, forKey: .databaseItem)
+        storedAlertTags = try container.decodeIfPresent([PersistedAlertTag].self, forKey: .storedAlertTags) ?? []
+        highlightRank = try container.decodeIfPresent(Int.self, forKey: .highlightRank) ?? 9
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(name, forKey: .name)
+        try container.encode(originalOrder, forKey: .originalOrder)
+        try container.encode(isBlocked, forKey: .isBlocked)
+        try container.encodeIfPresent(databaseItem, forKey: .databaseItem)
+        try container.encode(storedAlertTags, forKey: .storedAlertTags)
+        try container.encode(highlightRank, forKey: .highlightRank)
+    }
 
     /// 僅在「掃描／手動編輯當下」呼叫：對已切分好的名稱做一次字典解析。
     static func buildSnapshots(
@@ -845,6 +903,39 @@ struct PersistedScannedIngredient: Codable, Hashable, Sendable {
                 databaseItem: resolved
             )
         }
+    }
+}
+
+struct PersistedAlertTag: Codable, Hashable, Sendable {
+    var kind: String
+    var text: String
+    var reason: String
+
+    init(tag: IngredientAlertTag) {
+        switch tag.kind {
+        case .personalCustom: kind = "personalCustom"
+        case .toggleRisk: kind = "toggleRisk"
+        case .skinCaution: kind = "skinCaution"
+        case .skinFriendly: kind = "skinFriendly"
+        case .traceNote: kind = "traceNote"
+        }
+        text = tag.text
+        reason = tag.reason
+    }
+}
+
+extension IngredientAlertTag {
+    init?(stored: PersistedAlertTag) {
+        let resolvedKind: Kind
+        switch stored.kind {
+        case "personalCustom": resolvedKind = .personalCustom
+        case "toggleRisk": resolvedKind = .toggleRisk
+        case "skinCaution": resolvedKind = .skinCaution
+        case "skinFriendly": resolvedKind = .skinFriendly
+        case "traceNote": resolvedKind = .traceNote
+        default: return nil
+        }
+        self.init(kind: resolvedKind, text: stored.text, reason: stored.reason)
     }
 }
 
@@ -923,6 +1014,169 @@ enum ScanRecordCodec {
             return []
         }
         return decoded
+    }
+}
+
+/// 風險開關與自訂清單沒變時，詳情不再重算。
+enum AlertEvaluationKey {
+    static func make(
+        blockedTags: [String],
+        customBlockedIngredients: [String],
+        skinType: SkinType,
+        isSensitiveSkin: Bool
+    ) -> String {
+        let tags = blockedTags.sorted().joined(separator: "\u{1}")
+        let custom = customBlockedIngredients
+            .map { IngredientMatcher.normalizedForMatching($0) }
+            .filter { !$0.isEmpty }
+            .sorted()
+            .joined(separator: "\u{1}")
+        return "\(tags)#\(custom)#\(skinType.rawValue)#\(isSensitiveSkin ? 1 : 0)#v2"
+    }
+}
+
+/// 整瓶要浮上來的膚質提醒名稱，順序固定。
+enum SkinCautionCapsule {
+    static func labels(in report: SkinSuitabilityReport) -> [String] {
+        guard report.shouldSurfaceSkinCautionInSummary else { return [] }
+        let hit = Set(report.hits.filter(\.flag.isCaution).map(\.flag))
+        return SkinSuitabilityFlag.allCases.filter { $0.isCaution && hit.contains($0) }.map(\.rawValue)
+    }
+
+    static func labels(ingredients: [String], profile: UserProfile) -> [String] {
+        let report = SkinSuitabilityEngine.evaluate(
+            ingredients: ingredients,
+            skinType: profile.skinType,
+            isSensitiveSkin: profile.isSensitiveSkin,
+            enabledAlertTags: Set(profile.blockedTags)
+        )
+        return labels(in: report)
+    }
+}
+
+/// 已存的最愛與紀錄，風險開關或自訂清單變了才重算。
+enum SavedAlertSync {
+    @MainActor
+    static func refreshStoredAlerts(profile: UserProfile?, in context: ModelContext) {
+        guard let profile else { return }
+        IngredientDatabaseManager.shared.ensureLoaded()
+        let tags = profile.blockedTags
+        let custom = profile.customBlockedIngredients
+        let tagsRaw = ScanRecordCodec.encode(tags)
+        let customRaw = ScanRecordCodec.encode(custom)
+        let evaluationKey = AlertEvaluationKey.make(
+            blockedTags: tags,
+            customBlockedIngredients: custom,
+            skinType: profile.skinType,
+            isSensitiveSkin: profile.isSensitiveSkin
+        )
+        var changed = false
+
+        let favorites = (try? context.fetch(FetchDescriptor<FavoriteProductRecord>())) ?? []
+        for record in favorites {
+            if record.alertEvaluationKey == evaluationKey { continue }
+            let names = record.recognizedIngredients
+            guard !names.isEmpty else { continue }
+            let matched = IngredientMatcher.checkAlerts(
+                detectedIngredients: names,
+                blockedTags: tags,
+                customIngredients: custom
+            ) + SkinCautionCapsule.labels(ingredients: names, profile: profile)
+            let matchedRaw = ScanRecordCodec.encode(matched)
+            if record.matchedIngredientsRaw == matchedRaw,
+               record.blockedTagsRaw == tagsRaw,
+               record.customBlockedIngredientsRaw == customRaw {
+                continue
+            }
+            record.matchedIngredientsRaw = matchedRaw
+            record.blockedTagsRaw = tagsRaw
+            record.customBlockedIngredientsRaw = customRaw
+            record.highlight = matched.isEmpty
+                ? "共 \(names.count) 項成分"
+                : "命中 \(matched.count) 項風險成分"
+            record.accentRed = matched.isEmpty ? 0.55 : 0.78
+            record.accentGreen = matched.isEmpty ? 0.62 : 0.48
+            record.accentBlue = matched.isEmpty ? 0.54 : 0.42
+            record.alertEvaluationKey = ""
+            record.resolvedIngredientsRaw = ScanRecordCodec.encodeSnapshots(
+                refreshedSnapshots(
+                    existing: record.resolvedIngredients,
+                    names: names,
+                    matched: matched,
+                    tags: tags,
+                    custom: custom
+                )
+            )
+            changed = true
+        }
+
+        let history = (try? context.fetch(FetchDescriptor<ScanHistoryRecordEntity>())) ?? []
+        for entity in history {
+            if entity.alertEvaluationKey == evaluationKey { continue }
+            let names = entity.recognizedIngredients
+            guard !names.isEmpty else { continue }
+            let matched = IngredientMatcher.checkAlerts(
+                detectedIngredients: names,
+                blockedTags: tags,
+                customIngredients: custom
+            ) + SkinCautionCapsule.labels(ingredients: names, profile: profile)
+            let matchedRaw = ScanRecordCodec.encode(matched)
+            let summary = ScanHistoryWriter.makeSummary(
+                ingredientCount: names.count,
+                matchedCount: matched.count
+            )
+            if entity.matchedIngredientsRaw == matchedRaw,
+               entity.blockedTagsRaw == tagsRaw,
+               entity.summary == summary {
+                continue
+            }
+            entity.matchedIngredientsRaw = matchedRaw
+            entity.blockedTagsRaw = tagsRaw
+            entity.summary = summary
+            entity.alertEvaluationKey = ""
+            entity.resolvedIngredientsRaw = ScanRecordCodec.encodeSnapshots(
+                refreshedSnapshots(
+                    existing: entity.resolvedIngredients,
+                    names: names,
+                    matched: matched,
+                    tags: tags,
+                    custom: custom
+                )
+            )
+            changed = true
+        }
+
+        if changed {
+            try? context.save()
+        }
+    }
+
+    private static func refreshedSnapshots(
+        existing: [PersistedScannedIngredient],
+        names: [String],
+        matched: [String],
+        tags: [String],
+        custom: [String]
+    ) -> [PersistedScannedIngredient] {
+        guard !existing.isEmpty else {
+            return PersistedScannedIngredient.buildSnapshots(
+                ingredientNames: names,
+                matchedAlerts: matched,
+                blockedTags: tags,
+                customBlockedIngredients: custom
+            )
+        }
+        return existing.map { snap in
+            var copy = snap
+            copy.isBlocked = IngredientRiskEvaluator.isRiskWarning(
+                name: snap.name,
+                databaseItem: snap.databaseItem,
+                blockedTags: tags,
+                customIngredients: custom,
+                alerts: matched
+            )
+            return copy
+        }
     }
 }
 
@@ -1024,6 +1278,7 @@ enum ScanHistoryWriter {
         entity.matchedIngredientsRaw = ScanRecordCodec.encode(matchedIngredients)
         entity.resolvedIngredientsRaw = ScanRecordCodec.encodeSnapshots(resolvedSnapshots)
         entity.ingredientCount = ingredients.count
+        entity.alertEvaluationKey = ""
         entity.statusRawValue = (ingredients.isEmpty ? ScanHistoryStatus.failed : ScanHistoryStatus.completed).rawValue
 
         entity.summary = makeSummary(

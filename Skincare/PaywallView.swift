@@ -8,7 +8,7 @@ struct PaywallView: View {
     var reason: PaywallReason = .generic
     var onUnlocked: (() -> Void)? = nil
 
-    @State private var selectedID: SubscriptionProductID = .yearly
+    @State private var selectedID: SubscriptionProductID = .lifetime
 
     var body: some View {
         NavigationStack {
@@ -44,8 +44,8 @@ struct PaywallView: View {
             }
             .task {
                 await store.refresh()
-                if store.product(for: .yearly) != nil {
-                    selectedID = .yearly
+                if store.product(for: .lifetime) != nil {
+                    selectedID = .lifetime
                 } else if let first = store.visibleProductIDs().first {
                     selectedID = first
                 }
@@ -208,8 +208,8 @@ struct PaywallView: View {
             return
         }
         await store.refresh()
-        if store.product(for: .yearly) != nil {
-            selectedID = .yearly
+        if store.product(for: .lifetime) != nil {
+            selectedID = .lifetime
         } else if let first = store.visibleProductIDs().first(where: { store.product(for: $0) != nil }) {
             selectedID = first
         }
@@ -227,7 +227,7 @@ struct PaywallView: View {
             .font(.footnote.weight(.semibold))
             .foregroundColor(Theme.accent)
 
-            Text("免費次數用完後需訂閱。付費也解鎖最愛。")
+            Text("免費次數用完後需付費。付費也解鎖最愛。")
                 .font(.caption2)
                 .foregroundColor(Theme.muted)
                 .multilineTextAlignment(.center)

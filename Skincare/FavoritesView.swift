@@ -190,6 +190,7 @@ struct FavoritesView: View {
                 }
                 .onAppear {
                     DataBootstrap.seedIfNeeded(in: modelContext)
+                    SavedAlertSync.refreshStoredAlerts(profile: profileList.first, in: modelContext)
                 }
                 .sheet(isPresented: $showPaywall) {
                     PaywallView(reason: paywallReason)
@@ -1107,12 +1108,12 @@ private struct CompactFavoriteProductCard: View {
                         .foregroundColor(Theme.muted)
 
                     if record.hasAvoidWarnings {
-                        Label("含風險成分", systemImage: "exclamationmark.triangle.fill")
-                            .font(.caption.weight(.semibold))
-                            .foregroundColor(.white)
-                            .padding(.horizontal, 10)
-                            .padding(.vertical, 5)
-                            .background(Theme.blush, in: Capsule())
+                        let label = AvoidCapsuleText.label(from: record.matchedIngredients)
+                        ViewThatFits(in: .horizontal) {
+                            avoidCapsule(label)
+                                .fixedSize(horizontal: true, vertical: false)
+                            avoidCapsule(label)
+                        }
                     }
                 }
 
@@ -1158,7 +1159,74 @@ private struct CompactFavoriteProductCard: View {
         if let slot = record.routineSlotBadgeText {
             return slot == "早" ? "早上保養" : "晚上保養"
         }
-        return record.hasAvoidWarnings ? "含風險成分" : "最愛保養品"
+        return record.hasAvoidWarnings
+            ? AvoidCapsuleText.label(from: record.matchedIngredients)
+            : "最愛保養品"
+    }
+
+    private func avoidCapsule(_ label: String) -> some View {
+        HStack(spacing: 4) {
+            Image(systemName: "exclamationmark.triangle.fill")
+            Text(label)
+                .lineLimit(1)
+        }
+        .font(.caption.weight(.semibold))
+        .foregroundColor(.white)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 5)
+        .background(Theme.blush, in: Capsule())
+    }
+}
+
+/// 卡片膠囊：大分類依成分提醒的順序，自訂接在後面。超過兩項只留前兩個。
+private enum AvoidCapsuleText {
+    static func label(from alerts: [String]) -> String {
+        let names = orderedNames(from: alerts)
+        guard !names.isEmpty else { return "含風險成分" }
+        if names.count <= 2 {
+            return names.joined(separator: "、")
+        }
+        return "\(names.prefix(2).joined(separator: "、"))等 \(names.count) 項"
+    }
+
+    /// 大分類、膚質提醒，然後才是自訂。
+    private static func orderedNames(from alerts: [String]) -> [String] {
+        var seen = Set<String>()
+        var categories: [String] = []
+        var skin: [String] = []
+        var custom: [String] = []
+        let skinOrder = SkinSuitabilityFlag.allCases.filter(\.isCaution).map(\.rawValue)
+        for alert in alerts {
+            let name = displayName(from: alert)
+            guard !name.isEmpty, seen.insert(name).inserted else { continue }
+            if AvoidIngredientOption.all.contains(where: { $0.title == name }) {
+                categories.append(name)
+            } else if skinOrder.contains(name) {
+                skin.append(name)
+            } else {
+                custom.append(name)
+            }
+        }
+        let orderedCategories = AvoidIngredientOption.all
+            .map(\.title)
+            .filter { categories.contains($0) }
+        let orderedSkin = skinOrder.filter { skin.contains($0) }
+        return orderedCategories + orderedSkin + custom
+    }
+
+    private static func displayName(from alert: String) -> String {
+        let trimmed = alert.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let open = trimmed.firstIndex(of: "（"), trimmed.hasSuffix("）") else {
+            return trimmed
+        }
+        let title = trimmed[..<open].trimmingCharacters(in: .whitespacesAndNewlines)
+        let innerStart = trimmed.index(after: open)
+        let innerEnd = trimmed.index(before: trimmed.endIndex)
+        let inner = trimmed[innerStart..<innerEnd].trimmingCharacters(in: .whitespacesAndNewlines)
+        if title == "自訂風險" {
+            return inner
+        }
+        return title
     }
 }
 
